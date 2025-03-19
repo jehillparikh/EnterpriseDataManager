@@ -167,6 +167,37 @@ class UserPortfolioSchema(Schema):
     date_invested = fields.Date(required=True, error_messages={"required": "Date invested is required."})
 
 
+class FundFactSheetSchema(Schema):
+    """Schema for fund factsheet validation"""
+    scheme_id = fields.Integer(required=True, error_messages={"required": "Scheme ID is required."})
+    fund_manager = fields.String(validate=validate.Length(max=255))
+    fund_house = fields.String(required=True, validate=validate.Length(min=2, max=255),
+                               error_messages={"required": "Fund house is required."})
+    inception_date = fields.Date()
+    expense_ratio = fields.Float(validate=validate.Range(min=0, max=10))
+    benchmark_index = fields.String(validate=validate.Length(max=255))
+    category = fields.String(required=True, validate=validate.Length(min=2, max=100),
+                             error_messages={"required": "Category is required."})
+    risk_level = fields.String(validate=validate.OneOf(["Low", "Moderate", "High"]))
+    aum = fields.Float(validate=validate.Range(min=0))
+    exit_load = fields.String(validate=validate.Length(max=50))
+    holdings_count = fields.Integer(validate=validate.Range(min=0))
+
+
+class ReturnsSchema(Schema):
+    """Schema for returns validation"""
+    scheme_id = fields.Integer(required=True, error_messages={"required": "Scheme ID is required."})
+    date = fields.Date(required=True, error_messages={"required": "Date is required."})
+    return_1m = fields.Float(validate=validate.Range(min=-100))
+    return_3m = fields.Float(validate=validate.Range(min=-100))
+    return_6m = fields.Float(validate=validate.Range(min=-100))
+    return_ytd = fields.Float(validate=validate.Range(min=-100))
+    return_1y = fields.Float(validate=validate.Range(min=-100))
+    return_3y = fields.Float(validate=validate.Range(min=-100))
+    return_5y = fields.Float(validate=validate.Range(min=-100))
+    scheme_code = fields.String(required=True, error_messages={"required": "Scheme code is required."})
+
+
 # Create schema instances
 user_registration_schema = UserRegistrationSchema()
 user_login_schema = UserLoginSchema()
@@ -183,3 +214,5 @@ fund_scheme_schema = FundSchemeSchema()
 fund_scheme_detail_schema = FundSchemeDetailSchema()
 mutual_fund_schema = MutualFundSchema()
 user_portfolio_schema = UserPortfolioSchema()
+fund_factsheet_schema = FundFactSheetSchema()
+returns_schema = ReturnsSchema()

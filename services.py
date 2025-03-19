@@ -320,6 +320,138 @@ class KycService:
             db.session.rollback()
             logger.error(f"Error updating KYC details: {str(e)}")
             raise DatabaseError(f"Error updating KYC details: {str(e)}")
+            
+    @staticmethod
+    def verify_kyc_hyperverge(user_id, pan_image_path, selfie_image_path=None, video_path=None):
+        """
+        Verify KYC using Hyperverge API
+        
+        Args:
+            user_id (int): User ID
+            pan_image_path (str): Path to PAN card image
+            selfie_image_path (str, optional): Path to selfie image
+            video_path (str, optional): Path to liveness verification video
+            
+        Returns:
+            dict: Verification result
+            
+        Raises:
+            ResourceNotFoundError: If user does not exist
+        """
+        from hyperverge_service import HypervergeService
+        
+        # Verify user exists
+        user = UserService.get_user(user_id)
+        
+        # Verify PAN card
+        pan_result = HypervergeService.verify_id_card(pan_image_path, id_type="PAN")
+        
+        # Initialize results
+        verification_results = {
+            "pan_verification": pan_result,
+            "face_match": None,
+            "liveness": None,
+            "success": pan_result.get("success", False)
+        }
+        
+        # If PAN verification succeeded and selfie is provided, verify face match
+        if pan_result.get("success", False) and selfie_image_path:
+            face_match_result = HypervergeService.verify_face_match(selfie_image_path, pan_image_path)
+            verification_results["face_match"] = face_match_result
+            verification_results["success"] = verification_results["success"] and face_match_result.get("success", False)
+        
+        # If video is provided, verify liveness
+        if video_path:
+            liveness_result = HypervergeService.verify_liveness(video_path)
+            verification_results["liveness"] = liveness_result
+            verification_results["success"] = verification_results["success"] and liveness_result.get("success", False)
+        
+        # Extract PAN details if verification successful
+        if verification_results["success"] and "result" in pan_result:
+            try:
+                # Extract details from PAN card
+                pan_details = pan_result["result"]
+                
+                # Check if we already have KYC for this user
+                existing_kyc = KycDetail.query.filter_by(user_id=user_id).first()
+                
+                if existing_kyc:
+                    # Update existing KYC with PAN details
+                    kyc_update = {}
+                    
+                    if "pan" in pan_details:
+                        kyc_update["pan"] = pan_details["pan"]
+                    if "name" in pan_details:
+                        # Split name into parts (simplified)
+                        name_parts = pan_details["name"].split(" ")
+                        if len(name_parts) > 0:
+                            kyc_update["first_name"] = name_parts[0]
+                        if len(name_parts) > 1:
+                            kyc_update["last_name"] = name_parts[-1]
+                        if len(name_parts) > 2:
+                            kyc_update["middle_name"] = " ".join(name_parts[1:-1])
+                    if "dob" in pan_details:
+                        kyc_update["dob"] = pan_details["dob"]
+                    
+                    KycService.update_kyc(user_id, **kyc_update)
+                    verification_results["kyc_updated"] = True
+                else:
+                    # Skip creating a new KYC record here as we need more details
+                    verification_results["kyc_created"] = False
+                    verification_results["message"] = "PAN verification successful, but full KYC details needed"
+            except Exception as e:
+                logger.error(f"Error processing PAN details: {str(e)}")
+                verification_results["processing_error"] = str(e)
+        
+        return verification_results
+    
+    @staticmethod
+    def register_with_bse_star(user_id):
+        """
+        Register a user with BSE Star
+        
+        Args:
+            user_id (int): User ID
+            
+        Returns:
+            dict: Registration result
+            
+        Raises:
+            ResourceNotFoundError: If user or KYC details do not exist
+        """
+        from bse_star_service import BseStarService
+        
+        # Verify user exists
+        user = UserService.get_user(user_id)
+        
+        # Get KYC details
+        kyc = KycService.get_kyc(user_id)
+        
+        # Prepare full name
+        full_name_parts = [kyc.first_name]
+        if kyc.middle_name:
+            full_name_parts.append(kyc.middle_name)
+        full_name_parts.append(kyc.last_name)
+        full_name = " ".join(full_name_parts)
+        
+        # Register client with BSE Star
+        try:
+            result = BseStarService.register_client(
+                pan=kyc.pan,
+                full_name=full_name,
+                dob=kyc.dob,
+                mobile=user.mobile_number,
+                email=user.email,
+                address=kyc.address,
+                city=kyc.city,
+                state=kyc.state,
+                pincode=kyc.pincode
+            )
+            
+            return result
+        except Exception as e:
+            logger.error(f"Error registering with BSE Star: {str(e)}")
+            return {"success": False, "error": str(e)}
 
 # Bank Services
 class BankService:
