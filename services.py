@@ -977,6 +977,268 @@ class FundService:
         if not detail:
             raise ResourceNotFoundError(f"Details for scheme {scheme_id} not found")
         return detail
+    
+    @staticmethod
+    def create_fund_factsheet(scheme_id, fund_manager=None, fund_house=None, inception_date=None, 
+                             expense_ratio=None, benchmark_index=None, category=None, risk_level=None, 
+                             aum=None, exit_load=None, holdings_count=None):
+        """
+        Create a factsheet for a fund scheme
+        
+        Args:
+            scheme_id (int): Scheme ID
+            fund_manager (str, optional): Fund manager's name
+            fund_house (str, optional): Fund house name
+            inception_date (date, optional): Fund inception date
+            expense_ratio (float, optional): Expense ratio
+            benchmark_index (str, optional): Benchmark index
+            category (str, optional): Fund category
+            risk_level (str, optional): Risk level
+            aum (float, optional): Assets Under Management
+            exit_load (str, optional): Exit load details
+            holdings_count (int, optional): Number of holdings
+            
+        Returns:
+            FundFactSheet: The created factsheet
+            
+        Raises:
+            ResourceNotFoundError: If scheme does not exist
+            UniqueConstraintError: If factsheet already exists for the scheme
+        """
+        # Check if scheme exists
+        scheme = FundScheme.query.get(scheme_id)
+        if not scheme:
+            raise ResourceNotFoundError(f"Fund scheme with ID {scheme_id} not found")
+        
+        # Check if factsheet already exists
+        existing = FundFactSheet.query.filter_by(scheme_id=scheme_id).first()
+        if existing:
+            raise UniqueConstraintError(f"Factsheet already exists for scheme with ID {scheme_id}")
+        
+        # Get fund house from scheme's fund if not provided
+        if not fund_house:
+            fund_house = scheme.fund.amc.name
+        
+        # Get category from scheme or fund if not provided
+        if not category:
+            category = scheme.plan  # Default to plan as category
+        
+        factsheet = FundFactSheet(
+            scheme_id=scheme_id,
+            fund_manager=fund_manager,
+            fund_house=fund_house,
+            inception_date=inception_date,
+            expense_ratio=expense_ratio,
+            benchmark_index=benchmark_index,
+            category=category,
+            risk_level=risk_level,
+            aum=aum,
+            exit_load=exit_load,
+            holdings_count=holdings_count
+        )
+        
+        try:
+            db.session.add(factsheet)
+            db.session.commit()
+            return factsheet
+        except IntegrityError:
+            db.session.rollback()
+            raise UniqueConstraintError(f"Factsheet already exists for scheme with ID {scheme_id}")
+    
+    @staticmethod
+    def get_fund_factsheet(scheme_id):
+        """
+        Get factsheet for a fund scheme
+        
+        Args:
+            scheme_id (int): Scheme ID
+            
+        Returns:
+            FundFactSheet: The requested factsheet
+            
+        Raises:
+            ResourceNotFoundError: If factsheet does not exist
+        """
+        factsheet = FundFactSheet.query.filter_by(scheme_id=scheme_id).first()
+        if not factsheet:
+            raise ResourceNotFoundError(f"Factsheet not found for scheme with ID {scheme_id}")
+        
+        return factsheet
+    
+    @staticmethod
+    def update_fund_factsheet(scheme_id, **kwargs):
+        """
+        Update factsheet for a fund scheme
+        
+        Args:
+            scheme_id (int): Scheme ID
+            **kwargs: Fields to update
+            
+        Returns:
+            FundFactSheet: The updated factsheet
+            
+        Raises:
+            ResourceNotFoundError: If factsheet does not exist
+        """
+        factsheet = FundFactSheet.query.filter_by(scheme_id=scheme_id).first()
+        if not factsheet:
+            raise ResourceNotFoundError(f"Factsheet not found for scheme with ID {scheme_id}")
+        
+        # Update fields
+        for key, value in kwargs.items():
+            if hasattr(factsheet, key):
+                setattr(factsheet, key, value)
+        
+        db.session.commit()
+        return factsheet
+    
+    @staticmethod
+    def delete_fund_factsheet(scheme_id):
+        """
+        Delete factsheet for a fund scheme
+        
+        Args:
+            scheme_id (int): Scheme ID
+            
+        Raises:
+            ResourceNotFoundError: If factsheet does not exist
+        """
+        factsheet = FundFactSheet.query.filter_by(scheme_id=scheme_id).first()
+        if not factsheet:
+            raise ResourceNotFoundError(f"Factsheet not found for scheme with ID {scheme_id}")
+        
+        db.session.delete(factsheet)
+        db.session.commit()
+    
+    @staticmethod
+    def create_fund_returns(scheme_id, date, scheme_code, return_1m=None, return_3m=None, return_6m=None, 
+                           return_ytd=None, return_1y=None, return_3y=None, return_5y=None):
+        """
+        Create returns data for a fund scheme
+        
+        Args:
+            scheme_id (int): Scheme ID
+            date (date): Date of returns calculation
+            scheme_code (str): Scheme code
+            return_1m (float, optional): 1-month return
+            return_3m (float, optional): 3-month return
+            return_6m (float, optional): 6-month return
+            return_ytd (float, optional): Year-to-date return
+            return_1y (float, optional): 1-year return
+            return_3y (float, optional): 3-year return
+            return_5y (float, optional): 5-year return
+            
+        Returns:
+            Returns: The created returns data
+            
+        Raises:
+            ResourceNotFoundError: If scheme does not exist
+        """
+        # Check if scheme exists
+        scheme = FundScheme.query.get(scheme_id)
+        if not scheme:
+            raise ResourceNotFoundError(f"Fund scheme with ID {scheme_id} not found")
+        
+        # Check if returns data already exists for this date
+        existing = Returns.query.filter_by(scheme_id=scheme_id, date=date).first()
+        if existing:
+            raise UniqueConstraintError(f"Returns data already exists for scheme with ID {scheme_id} on {date}")
+        
+        returns = Returns(
+            scheme_id=scheme_id,
+            date=date,
+            scheme_code=scheme_code,
+            return_1m=return_1m,
+            return_3m=return_3m,
+            return_6m=return_6m,
+            return_ytd=return_ytd,
+            return_1y=return_1y,
+            return_3y=return_3y,
+            return_5y=return_5y
+        )
+        
+        db.session.add(returns)
+        db.session.commit()
+        return returns
+    
+    @staticmethod
+    def get_fund_returns(scheme_id, date=None):
+        """
+        Get returns data for a fund scheme
+        
+        Args:
+            scheme_id (int): Scheme ID
+            date (date, optional): Specific date for returns data
+            
+        Returns:
+            Returns or list: The requested returns data or list of returns data
+            
+        Raises:
+            ResourceNotFoundError: If returns data does not exist
+        """
+        # Check if scheme exists
+        scheme = FundScheme.query.get(scheme_id)
+        if not scheme:
+            raise ResourceNotFoundError(f"Fund scheme with ID {scheme_id} not found")
+        
+        if date:
+            returns = Returns.query.filter_by(scheme_id=scheme_id, date=date).first()
+            if not returns:
+                raise ResourceNotFoundError(f"Returns data not found for scheme with ID {scheme_id} on {date}")
+            return returns
+        else:
+            returns = Returns.query.filter_by(scheme_id=scheme_id).order_by(Returns.date.desc()).all()
+            if not returns:
+                raise ResourceNotFoundError(f"Returns data not found for scheme with ID {scheme_id}")
+            return returns
+    
+    @staticmethod
+    def update_fund_returns(scheme_id, date, **kwargs):
+        """
+        Update returns data for a fund scheme
+        
+        Args:
+            scheme_id (int): Scheme ID
+            date (date): Date of returns data
+            **kwargs: Fields to update
+            
+        Returns:
+            Returns: The updated returns data
+            
+        Raises:
+            ResourceNotFoundError: If returns data does not exist
+        """
+        returns = Returns.query.filter_by(scheme_id=scheme_id, date=date).first()
+        if not returns:
+            raise ResourceNotFoundError(f"Returns data not found for scheme with ID {scheme_id} on {date}")
+        
+        # Update fields
+        for key, value in kwargs.items():
+            if hasattr(returns, key) and key not in ['scheme_id', 'date']:
+                setattr(returns, key, value)
+        
+        db.session.commit()
+        return returns
+    
+    @staticmethod
+    def delete_fund_returns(scheme_id, date):
+        """
+        Delete returns data for a fund scheme
+        
+        Args:
+            scheme_id (int): Scheme ID
+            date (date): Date of returns data
+            
+        Raises:
+            ResourceNotFoundError: If returns data does not exist
+        """
+        returns = Returns.query.filter_by(scheme_id=scheme_id, date=date).first()
+        if not returns:
+            raise ResourceNotFoundError(f"Returns data not found for scheme with ID {scheme_id} on {date}")
+        
+        db.session.delete(returns)
+        db.session.commit()
+
 
 # Portfolio Services
 class PortfolioService:
