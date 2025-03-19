@@ -16,7 +16,7 @@ from schemas import (
     user_registration_schema, user_login_schema, user_update_schema,
     kyc_detail_schema, bank_repo_schema, branch_repo_schema, bank_detail_schema, mandate_schema,
     amc_schema, fund_schema, fund_scheme_schema, fund_scheme_detail_schema,
-    mutual_fund_schema, user_portfolio_schema, fund_factsheet_schema, returns_schema
+    mutual_fund_schema, user_portfolio_schema, fund_factsheet_schema, returns_schema, fund_holding_schema
 )
 
 logger = logging.getLogger(__name__)
@@ -1098,6 +1098,136 @@ def delete_portfolio_entry(current_user, portfolio_id):
         return jsonify({"error": f"Portfolio entry with ID {portfolio_id} not found"}), 404
 
 # Setup function to register blueprint
+# Fund Holdings Routes
+@api_bp.route('/schemes/<int:scheme_id>/holdings', methods=['POST'])
+@token_required
+def create_fund_holding(current_user, scheme_id):
+    """Create a new fund holding for a scheme"""
+    try:
+        # Validate request data
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No input data provided"}), 400
+            
+        validated_data = fund_holding_schema.load(data)
+        
+        # Create fund holding
+        holding = FundService.create_fund_holding(
+            scheme_id=scheme_id,
+            security_name=validated_data['security_name'],
+            asset_type=validated_data['asset_type'],
+            weightage=validated_data['weightage'],
+            isin=validated_data.get('isin'),
+            sector=validated_data.get('sector'),
+            holding_value=validated_data.get('holding_value')
+        )
+        
+        return jsonify({
+            "message": "Fund holding created successfully",
+            "holding": {
+                "id": holding.id,
+                "scheme_id": holding.scheme_id,
+                "security_name": holding.security_name,
+                "isin": holding.isin,
+                "sector": holding.sector,
+                "asset_type": holding.asset_type,
+                "weightage": holding.weightage,
+                "holding_value": holding.holding_value,
+                "last_updated": holding.last_updated.isoformat() if holding.last_updated else None
+            }
+        }), 201
+    except SchemaValidationError as e:
+        return jsonify({"error": e.messages}), 400
+    except ResourceNotFoundError:
+        return jsonify({"error": f"Fund scheme with ID {scheme_id} not found"}), 404
+
+@api_bp.route('/schemes/<int:scheme_id>/holdings', methods=['GET'])
+def get_fund_holdings(scheme_id):
+    """Get all holdings for a fund scheme"""
+    try:
+        holdings = FundService.get_fund_holdings(scheme_id)
+        
+        return jsonify([{
+            "id": holding.id,
+            "scheme_id": holding.scheme_id,
+            "security_name": holding.security_name,
+            "isin": holding.isin,
+            "sector": holding.sector,
+            "asset_type": holding.asset_type,
+            "weightage": holding.weightage,
+            "holding_value": holding.holding_value,
+            "last_updated": holding.last_updated.isoformat() if holding.last_updated else None
+        } for holding in holdings]), 200
+    except ResourceNotFoundError:
+        return jsonify({"error": f"Fund scheme with ID {scheme_id} not found"}), 404
+
+@api_bp.route('/holdings/<int:holding_id>', methods=['GET'])
+def get_fund_holding(holding_id):
+    """Get a specific fund holding by ID"""
+    try:
+        holding = FundService.get_fund_holding(holding_id)
+        
+        return jsonify({
+            "id": holding.id,
+            "scheme_id": holding.scheme_id,
+            "security_name": holding.security_name,
+            "isin": holding.isin,
+            "sector": holding.sector,
+            "asset_type": holding.asset_type,
+            "weightage": holding.weightage,
+            "holding_value": holding.holding_value,
+            "last_updated": holding.last_updated.isoformat() if holding.last_updated else None
+        }), 200
+    except ResourceNotFoundError:
+        return jsonify({"error": f"Fund holding with ID {holding_id} not found"}), 404
+
+@api_bp.route('/holdings/<int:holding_id>', methods=['PUT', 'PATCH'])
+@token_required
+def update_fund_holding(current_user, holding_id):
+    """Update a fund holding"""
+    try:
+        # Validate request data
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No input data provided"}), 400
+            
+        validated_data = fund_holding_schema.load(data, partial=True)
+        
+        # Update fund holding
+        holding = FundService.update_fund_holding(
+            holding_id=holding_id,
+            **validated_data
+        )
+        
+        return jsonify({
+            "message": "Fund holding updated successfully",
+            "holding": {
+                "id": holding.id,
+                "scheme_id": holding.scheme_id,
+                "security_name": holding.security_name,
+                "isin": holding.isin,
+                "sector": holding.sector,
+                "asset_type": holding.asset_type,
+                "weightage": holding.weightage,
+                "holding_value": holding.holding_value,
+                "last_updated": holding.last_updated.isoformat() if holding.last_updated else None
+            }
+        }), 200
+    except SchemaValidationError as e:
+        return jsonify({"error": e.messages}), 400
+    except ResourceNotFoundError:
+        return jsonify({"error": f"Fund holding with ID {holding_id} not found"}), 404
+
+@api_bp.route('/holdings/<int:holding_id>', methods=['DELETE'])
+@token_required
+def delete_fund_holding(current_user, holding_id):
+    """Delete a fund holding"""
+    try:
+        FundService.delete_fund_holding(holding_id)
+        return jsonify({"message": "Fund holding deleted successfully"}), 200
+    except ResourceNotFoundError:
+        return jsonify({"error": f"Fund holding with ID {holding_id} not found"}), 404
+
 def setup_routes(app):
     """Register blueprints with the Flask application"""
     app.register_blueprint(api_bp)

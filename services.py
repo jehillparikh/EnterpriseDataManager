@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from models import (
     db, UserInfo, KycDetail, BankRepo, BranchRepo, BankDetail, Mandate,
     Amc, Fund, FundScheme, FundSchemeDetail, MutualFund, UserPortfolio, MFHoldings,
-    FundFactSheet, Returns
+    FundFactSheet, Returns, FundHolding
 )
 
 logger = logging.getLogger(__name__)
@@ -1566,7 +1566,11 @@ class PortfolioService:
         Raises:
             ResourceNotFoundError: If holding does not exist
         """
-        holding = FundService.get_fund_holding(holding_id)
+        # Get the holding directly
+        holding = FundHolding.query.get(holding_id)
+        if not holding:
+            logger.error(f"Fund holding not found: {holding_id}")
+            raise ResourceNotFoundError(f"Fund holding not found: {holding_id}")
         
         for key, value in kwargs.items():
             if hasattr(holding, key):
@@ -1594,7 +1598,10 @@ class PortfolioService:
         Raises:
             ResourceNotFoundError: If holding does not exist
         """
-        holding = FundService.get_fund_holding(holding_id)
+        holding = FundHolding.query.get(holding_id)
+        if not holding:
+            logger.error(f"Fund holding not found: {holding_id}")
+            raise ResourceNotFoundError(f"Fund holding not found: {holding_id}")
         
         try:
             db.session.delete(holding)
