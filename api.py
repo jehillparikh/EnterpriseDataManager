@@ -16,7 +16,7 @@ from schemas import (
     user_registration_schema, user_login_schema, user_update_schema,
     kyc_detail_schema, bank_repo_schema, branch_repo_schema, bank_detail_schema, mandate_schema,
     amc_schema, fund_schema, fund_scheme_schema, fund_scheme_detail_schema,
-    mutual_fund_schema, user_portfolio_schema
+    mutual_fund_schema, user_portfolio_schema, fund_factsheet_schema, returns_schema
 )
 
 logger = logging.getLogger(__name__)
@@ -662,6 +662,308 @@ def create_scheme_details(current_user, scheme_id):
         return jsonify({"error": str(e)}), 404
     except UniqueConstraintError as e:
         return jsonify({"error": str(e)}), 409
+
+
+# Fund Factsheet Routes
+@api_bp.route('/schemes/<int:scheme_id>/factsheet', methods=['POST'])
+@token_required
+def create_fund_factsheet(current_user, scheme_id):
+    """Create a factsheet for a fund scheme"""
+    try:
+        # Validate request data
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No input data provided"}), 400
+            
+        # Add scheme_id to the data before validation
+        data['scheme_id'] = scheme_id
+        validated_data = fund_factsheet_schema.load(data)
+        
+        # Create fund factsheet
+        factsheet = FundService.create_fund_factsheet(
+            scheme_id=validated_data['scheme_id'],
+            fund_manager=validated_data.get('fund_manager'),
+            fund_house=validated_data.get('fund_house'),
+            inception_date=validated_data.get('inception_date'),
+            expense_ratio=validated_data.get('expense_ratio'),
+            benchmark_index=validated_data.get('benchmark_index'),
+            category=validated_data.get('category'),
+            risk_level=validated_data.get('risk_level'),
+            aum=validated_data.get('aum'),
+            exit_load=validated_data.get('exit_load'),
+            holdings_count=validated_data.get('holdings_count')
+        )
+        
+        return jsonify({
+            "message": "Fund factsheet created successfully",
+            "factsheet": {
+                "id": factsheet.id,
+                "scheme_id": factsheet.scheme_id,
+                "fund_manager": factsheet.fund_manager,
+                "fund_house": factsheet.fund_house,
+                "inception_date": factsheet.inception_date.isoformat() if factsheet.inception_date else None,
+                "expense_ratio": factsheet.expense_ratio,
+                "benchmark_index": factsheet.benchmark_index,
+                "category": factsheet.category,
+                "risk_level": factsheet.risk_level,
+                "aum": factsheet.aum,
+                "exit_load": factsheet.exit_load,
+                "holdings_count": factsheet.holdings_count,
+                "last_updated": factsheet.last_updated.isoformat() if factsheet.last_updated else None
+            }
+        }), 201
+    except SchemaValidationError as e:
+        return jsonify({"error": e.messages}), 400
+    except ResourceNotFoundError as e:
+        return jsonify({"error": str(e)}), 404
+    except UniqueConstraintError as e:
+        return jsonify({"error": str(e)}), 409
+
+
+@api_bp.route('/schemes/<int:scheme_id>/factsheet', methods=['GET'])
+def get_fund_factsheet(scheme_id):
+    """Get a factsheet for a fund scheme"""
+    try:
+        factsheet = FundService.get_fund_factsheet(scheme_id)
+        
+        return jsonify({
+            "id": factsheet.id,
+            "scheme_id": factsheet.scheme_id,
+            "fund_manager": factsheet.fund_manager,
+            "fund_house": factsheet.fund_house,
+            "inception_date": factsheet.inception_date.isoformat() if factsheet.inception_date else None,
+            "expense_ratio": factsheet.expense_ratio,
+            "benchmark_index": factsheet.benchmark_index,
+            "category": factsheet.category,
+            "risk_level": factsheet.risk_level,
+            "aum": factsheet.aum,
+            "exit_load": factsheet.exit_load,
+            "holdings_count": factsheet.holdings_count,
+            "last_updated": factsheet.last_updated.isoformat() if factsheet.last_updated else None
+        }), 200
+    except ResourceNotFoundError as e:
+        return jsonify({"error": str(e)}), 404
+
+
+@api_bp.route('/schemes/<int:scheme_id>/factsheet', methods=['PUT', 'PATCH'])
+@token_required
+def update_fund_factsheet(current_user, scheme_id):
+    """Update a factsheet for a fund scheme"""
+    try:
+        # Validate request data
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No input data provided"}), 400
+            
+        validated_data = fund_factsheet_schema.load(data, partial=True)
+        
+        # Update fund factsheet
+        factsheet = FundService.update_fund_factsheet(
+            scheme_id=scheme_id,
+            **validated_data
+        )
+        
+        return jsonify({
+            "message": "Fund factsheet updated successfully",
+            "factsheet": {
+                "id": factsheet.id,
+                "scheme_id": factsheet.scheme_id,
+                "fund_manager": factsheet.fund_manager,
+                "fund_house": factsheet.fund_house,
+                "inception_date": factsheet.inception_date.isoformat() if factsheet.inception_date else None,
+                "expense_ratio": factsheet.expense_ratio,
+                "benchmark_index": factsheet.benchmark_index,
+                "category": factsheet.category,
+                "risk_level": factsheet.risk_level,
+                "aum": factsheet.aum,
+                "exit_load": factsheet.exit_load,
+                "holdings_count": factsheet.holdings_count,
+                "last_updated": factsheet.last_updated.isoformat() if factsheet.last_updated else None
+            }
+        }), 200
+    except SchemaValidationError as e:
+        return jsonify({"error": e.messages}), 400
+    except ResourceNotFoundError as e:
+        return jsonify({"error": str(e)}), 404
+
+
+@api_bp.route('/schemes/<int:scheme_id>/factsheet', methods=['DELETE'])
+@token_required
+def delete_fund_factsheet(current_user, scheme_id):
+    """Delete a factsheet for a fund scheme"""
+    try:
+        FundService.delete_fund_factsheet(scheme_id)
+        return jsonify({"message": "Fund factsheet deleted successfully"}), 200
+    except ResourceNotFoundError as e:
+        return jsonify({"error": str(e)}), 404
+
+
+# Fund Returns Routes
+@api_bp.route('/schemes/<int:scheme_id>/returns', methods=['POST'])
+@token_required
+def create_fund_returns(current_user, scheme_id):
+    """Create returns data for a fund scheme"""
+    try:
+        # Validate request data
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No input data provided"}), 400
+            
+        # Add scheme_id to the data before validation
+        data['scheme_id'] = scheme_id
+        validated_data = returns_schema.load(data)
+        
+        # Create fund returns
+        returns = FundService.create_fund_returns(
+            scheme_id=validated_data['scheme_id'],
+            date=validated_data['date'],
+            scheme_code=validated_data['scheme_code'],
+            return_1m=validated_data.get('return_1m'),
+            return_3m=validated_data.get('return_3m'),
+            return_6m=validated_data.get('return_6m'),
+            return_ytd=validated_data.get('return_ytd'),
+            return_1y=validated_data.get('return_1y'),
+            return_3y=validated_data.get('return_3y'),
+            return_5y=validated_data.get('return_5y')
+        )
+        
+        return jsonify({
+            "message": "Fund returns created successfully",
+            "returns": {
+                "id": returns.id,
+                "scheme_id": returns.scheme_id,
+                "date": returns.date.isoformat() if returns.date else None,
+                "scheme_code": returns.scheme_code,
+                "return_1m": returns.return_1m,
+                "return_3m": returns.return_3m,
+                "return_6m": returns.return_6m,
+                "return_ytd": returns.return_ytd,
+                "return_1y": returns.return_1y,
+                "return_3y": returns.return_3y,
+                "return_5y": returns.return_5y
+            }
+        }), 201
+    except SchemaValidationError as e:
+        return jsonify({"error": e.messages}), 400
+    except ResourceNotFoundError as e:
+        return jsonify({"error": str(e)}), 404
+    except UniqueConstraintError as e:
+        return jsonify({"error": str(e)}), 409
+
+
+@api_bp.route('/schemes/<int:scheme_id>/returns', methods=['GET'])
+def get_fund_returns(scheme_id):
+    """Get returns data for a fund scheme"""
+    try:
+        date_param = request.args.get('date')
+        date = None
+        if date_param:
+            try:
+                date = datetime.datetime.strptime(date_param, '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+        
+        returns_data = FundService.get_fund_returns(scheme_id, date)
+        
+        if isinstance(returns_data, list):
+            result = []
+            for returns in returns_data:
+                result.append({
+                    "id": returns.id,
+                    "scheme_id": returns.scheme_id,
+                    "date": returns.date.isoformat() if returns.date else None,
+                    "scheme_code": returns.scheme_code,
+                    "return_1m": returns.return_1m,
+                    "return_3m": returns.return_3m,
+                    "return_6m": returns.return_6m,
+                    "return_ytd": returns.return_ytd,
+                    "return_1y": returns.return_1y,
+                    "return_3y": returns.return_3y,
+                    "return_5y": returns.return_5y
+                })
+        else:
+            result = {
+                "id": returns_data.id,
+                "scheme_id": returns_data.scheme_id,
+                "date": returns_data.date.isoformat() if returns_data.date else None,
+                "scheme_code": returns_data.scheme_code,
+                "return_1m": returns_data.return_1m,
+                "return_3m": returns_data.return_3m,
+                "return_6m": returns_data.return_6m,
+                "return_ytd": returns_data.return_ytd,
+                "return_1y": returns_data.return_1y,
+                "return_3y": returns_data.return_3y,
+                "return_5y": returns_data.return_5y
+            }
+            
+        return jsonify(result), 200
+    except ResourceNotFoundError as e:
+        return jsonify({"error": str(e)}), 404
+
+
+@api_bp.route('/schemes/<int:scheme_id>/returns/<date>', methods=['PUT', 'PATCH'])
+@token_required
+def update_fund_returns(current_user, scheme_id, date):
+    """Update returns data for a fund scheme"""
+    try:
+        # Convert date string to date object
+        try:
+            date_obj = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+        
+        # Validate request data
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No input data provided"}), 400
+            
+        validated_data = returns_schema.load(data, partial=True)
+        
+        # Update fund returns
+        returns = FundService.update_fund_returns(
+            scheme_id=scheme_id,
+            date=date_obj,
+            **validated_data
+        )
+        
+        return jsonify({
+            "message": "Fund returns updated successfully",
+            "returns": {
+                "id": returns.id,
+                "scheme_id": returns.scheme_id,
+                "date": returns.date.isoformat() if returns.date else None,
+                "scheme_code": returns.scheme_code,
+                "return_1m": returns.return_1m,
+                "return_3m": returns.return_3m,
+                "return_6m": returns.return_6m,
+                "return_ytd": returns.return_ytd,
+                "return_1y": returns.return_1y,
+                "return_3y": returns.return_3y,
+                "return_5y": returns.return_5y
+            }
+        }), 200
+    except SchemaValidationError as e:
+        return jsonify({"error": e.messages}), 400
+    except ResourceNotFoundError as e:
+        return jsonify({"error": str(e)}), 404
+
+
+@api_bp.route('/schemes/<int:scheme_id>/returns/<date>', methods=['DELETE'])
+@token_required
+def delete_fund_returns(current_user, scheme_id, date):
+    """Delete returns data for a fund scheme"""
+    try:
+        # Convert date string to date object
+        try:
+            date_obj = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+            
+        FundService.delete_fund_returns(scheme_id, date_obj)
+        return jsonify({"message": "Fund returns deleted successfully"}), 200
+    except ResourceNotFoundError as e:
+        return jsonify({"error": str(e)}), 404
+
 
 # Portfolio Routes
 @api_bp.route('/users/portfolio', methods=['GET'])

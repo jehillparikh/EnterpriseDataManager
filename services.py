@@ -1,9 +1,11 @@
 import logging
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from sqlalchemy.exc import IntegrityError
 from models import (
     db, UserInfo, KycDetail, BankRepo, BranchRepo, BankDetail, Mandate,
-    Amc, Fund, FundScheme, FundSchemeDetail, MutualFund, UserPortfolio, MFHoldings
+    Amc, Fund, FundScheme, FundSchemeDetail, MutualFund, UserPortfolio, MFHoldings,
+    FundFactSheet, Returns
 )
 
 logger = logging.getLogger(__name__)
