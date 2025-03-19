@@ -1465,3 +1465,142 @@ class PortfolioService:
             db.session.rollback()
             logger.error(f"Error updating holdings: {str(e)}")
             raise DatabaseError(f"Error updating holdings: {str(e)}")
+            
+    @staticmethod
+    def create_fund_holding(scheme_id, security_name, asset_type, weightage, isin=None, sector=None, holding_value=None):
+        """
+        Create a new fund holding for a scheme
+        
+        Args:
+            scheme_id (int): Scheme ID
+            security_name (str): Name of the security
+            asset_type (str): Type of asset (Equity, Debt, etc.)
+            weightage (float): Percentage allocation in the scheme
+            isin (str, optional): ISIN code of the security
+            sector (str, optional): Sector classification
+            holding_value (float, optional): Value of holding
+            
+        Returns:
+            FundHolding: The created fund holding
+            
+        Raises:
+            ResourceNotFoundError: If scheme does not exist
+        """
+        # Verify scheme exists
+        scheme = FundService.get_fund_scheme(scheme_id)
+        
+        # Create fund holding
+        fund_holding = FundHolding(
+            scheme_id=scheme_id,
+            security_name=security_name,
+            isin=isin,
+            sector=sector,
+            asset_type=asset_type,
+            weightage=weightage,
+            holding_value=holding_value,
+            last_updated=datetime.utcnow()
+        )
+        
+        try:
+            db.session.add(fund_holding)
+            db.session.commit()
+            logger.info(f"Fund holding created for scheme: {scheme_id}")
+            return fund_holding
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error creating fund holding: {str(e)}")
+            raise DatabaseError(f"Error creating fund holding: {str(e)}")
+    
+    @staticmethod
+    def get_fund_holdings(scheme_id):
+        """
+        Get all holdings for a scheme
+        
+        Args:
+            scheme_id (int): Scheme ID
+            
+        Returns:
+            list: List of fund holdings
+            
+        Raises:
+            ResourceNotFoundError: If scheme does not exist
+        """
+        # Verify scheme exists
+        scheme = FundService.get_fund_scheme(scheme_id)
+        
+        return FundHolding.query.filter_by(scheme_id=scheme_id).all()
+    
+    @staticmethod
+    def get_fund_holding(holding_id):
+        """
+        Get a fund holding by ID
+        
+        Args:
+            holding_id (int): Holding ID
+            
+        Returns:
+            FundHolding: The requested fund holding
+            
+        Raises:
+            ResourceNotFoundError: If holding does not exist
+        """
+        holding = FundHolding.query.get(holding_id)
+        if not holding:
+            logger.error(f"Fund holding not found: {holding_id}")
+            raise ResourceNotFoundError(f"Fund holding not found: {holding_id}")
+        
+        return holding
+    
+    @staticmethod
+    def update_fund_holding(holding_id, **kwargs):
+        """
+        Update a fund holding
+        
+        Args:
+            holding_id (int): Holding ID
+            **kwargs: Fields to update
+            
+        Returns:
+            FundHolding: The updated fund holding
+            
+        Raises:
+            ResourceNotFoundError: If holding does not exist
+        """
+        holding = FundService.get_fund_holding(holding_id)
+        
+        for key, value in kwargs.items():
+            if hasattr(holding, key):
+                setattr(holding, key, value)
+        
+        holding.last_updated = datetime.utcnow()
+        
+        try:
+            db.session.commit()
+            logger.info(f"Fund holding updated: {holding_id}")
+            return holding
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error updating fund holding: {str(e)}")
+            raise DatabaseError(f"Error updating fund holding: {str(e)}")
+    
+    @staticmethod
+    def delete_fund_holding(holding_id):
+        """
+        Delete a fund holding
+        
+        Args:
+            holding_id (int): Holding ID
+            
+        Raises:
+            ResourceNotFoundError: If holding does not exist
+        """
+        holding = FundService.get_fund_holding(holding_id)
+        
+        try:
+            db.session.delete(holding)
+            db.session.commit()
+            logger.info(f"Fund holding deleted: {holding_id}")
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error deleting fund holding: {str(e)}")
+            raise DatabaseError(f"Error deleting fund holding: {str(e)}")

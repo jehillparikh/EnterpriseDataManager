@@ -198,6 +198,20 @@ class ReturnsSchema(Schema):
     scheme_code = fields.String(required=True, error_messages={"required": "Scheme code is required."})
 
 
+class FundHoldingSchema(Schema):
+    """Schema for fund holdings validation"""
+    scheme_id = fields.Integer(required=True, error_messages={"required": "Scheme ID is required."})
+    security_name = fields.String(required=True, validate=validate.Length(min=2, max=255), 
+                                 error_messages={"required": "Security name is required."})
+    isin = fields.String(validate=validate.Length(max=20))
+    sector = fields.String(validate=validate.Length(max=100))
+    asset_type = fields.String(required=True, validate=validate.Length(min=2, max=50), 
+                              error_messages={"required": "Asset type is required."})
+    weightage = fields.Float(required=True, validate=validate.Range(min=0, max=100), 
+                            error_messages={"required": "Weightage is required."})
+    holding_value = fields.Float(validate=validate.Range(min=0))
+
+
 # Create schema instances
 user_registration_schema = UserRegistrationSchema()
 user_login_schema = UserLoginSchema()
@@ -216,3 +230,4 @@ mutual_fund_schema = MutualFundSchema()
 user_portfolio_schema = UserPortfolioSchema()
 fund_factsheet_schema = FundFactSheetSchema()
 returns_schema = ReturnsSchema()
+fund_holding_schema = FundHoldingSchema()
