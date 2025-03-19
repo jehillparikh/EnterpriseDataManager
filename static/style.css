@@ -1,0 +1,59 @@
+/* Custom styles to complement Bootstrap */
+.api-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    background-color: var(--bs-dark);
+}
+
+.endpoint {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border-left: 4px solid var(--bs-primary);
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.method-get {
+    color: var(--bs-success);
+    font-weight: bold;
+}
+
+.method-post {
+    color: var(--bs-primary);
+    font-weight: bold;
+}
+
+.method-put, .method-patch {
+    color: var(--bs-warning);
+    font-weight: bold;
+}
+
+.method-delete {
+    color: var(--bs-danger);
+    font-weight: bold;
+}
+
+pre {
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
+    padding: 1rem;
+    border-radius: 0.25rem;
+    overflow-x: auto;
+}
+
+code {
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.jumbotron {
+    padding: 2rem 1rem;
+    margin-bottom: 2rem;
+    background-color: var(--bs-dark);
+    border-radius: 0.3rem;
+}
+
+.hero-section {
+    min-height: 50vh;
+    display: flex;
+    align-items: center;
+}
