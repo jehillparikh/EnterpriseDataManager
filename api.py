@@ -471,8 +471,7 @@ def get_amc(amc_name):
 
 # Fund Routes
 @api_bp.route('/funds', methods=['POST'])
-@token_required
-def create_fund_direct(current_user):
+def create_fund_direct():
     """Create a new fund directly"""
     try:
         # Validate request data
@@ -631,8 +630,7 @@ def get_schemes_by_fund(fund_id):
         return jsonify({"error": f"Fund with ID {fund_id} not found"}), 404
         
 @api_bp.route('/funds/<int:fund_id>/schemes', methods=['POST'])
-@token_required
-def create_fund_scheme(current_user, fund_id):
+def create_fund_scheme(fund_id):
     """Create a new fund scheme under a fund"""
     try:
         # Validate request data
@@ -1184,8 +1182,7 @@ def delete_portfolio_entry(current_user, portfolio_id):
 # Setup function to register blueprint
 # Fund Holdings Routes
 @api_bp.route('/schemes/<int:scheme_id>/holdings', methods=['POST'])
-@token_required
-def create_fund_holding(current_user, scheme_id):
+def create_fund_holding(scheme_id):
     """Create a new fund holding for a scheme"""
     try:
         # Validate request data
@@ -1266,8 +1263,7 @@ def get_fund_holding(holding_id):
         return jsonify({"error": f"Fund holding with ID {holding_id} not found"}), 404
 
 @api_bp.route('/holdings/<int:holding_id>', methods=['PUT', 'PATCH'])
-@token_required
-def update_fund_holding(current_user, holding_id):
+def update_fund_holding(holding_id):
     """Update a fund holding"""
     try:
         # Validate request data
@@ -1303,8 +1299,7 @@ def update_fund_holding(current_user, holding_id):
         return jsonify({"error": f"Fund holding with ID {holding_id} not found"}), 404
 
 @api_bp.route('/holdings/<int:holding_id>', methods=['DELETE'])
-@token_required
-def delete_fund_holding(current_user, holding_id):
+def delete_fund_holding(holding_id):
     """Delete a fund holding"""
     try:
         FundService.delete_fund_holding(holding_id)
