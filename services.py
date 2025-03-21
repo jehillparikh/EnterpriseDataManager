@@ -4,8 +4,8 @@ from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from models import (
     db, UserInfo, KycDetail, BankRepo, BranchRepo, BankDetail, Mandate,
-    Amc, Fund, FundScheme, FundSchemeDetail, MutualFund, UserPortfolio, MFHoldings,
-    FundFactSheet, Returns, FundHolding
+    Fund, FundScheme, FundSchemeDetail, MutualFund, UserPortfolio, MFHoldings,
+    FundFactSheet, Returns, FundHolding, FundRating, NavHistory, DividendPayout
 )
 
 logger = logging.getLogger(__name__)
@@ -686,85 +686,21 @@ class FundService:
     """Service for Fund-related operations"""
     
     @staticmethod
-    def create_amc(name, short_name, fund_code=None, bse_code=None, active=True):
+    def create_fund(name, amc_name, amc_short_name, short_name=None, fund_code=None, rta_code=None, 
+                   bse_code=None, fund_type=None, fund_category=None, active=True, direct=False):
         """
-        Create a new AMC
-        
-        Args:
-            name (str): AMC name
-            short_name (str): Short name
-            fund_code (str, optional): Fund code
-            bse_code (str, optional): BSE code
-            active (bool, optional): Active status
-            
-        Returns:
-            Amc: The created AMC
-            
-        Raises:
-            UniqueConstraintError: If AMC name already exists
-        """
-        existing_amc = Amc.query.filter_by(name=name).first()
-        if existing_amc:
-            raise UniqueConstraintError(f"AMC with name '{name}' already exists")
-            
-        amc = Amc(
-            name=name,
-            short_name=short_name,
-            fund_code=fund_code,
-            bse_code=bse_code,
-            active=active
-        )
-        
-        try:
-            db.session.add(amc)
-            db.session.commit()
-            logger.info(f"AMC created: {amc.id}")
-            return amc
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Error creating AMC: {str(e)}")
-            raise DatabaseError(f"Error creating AMC: {str(e)}")
-    
-    @staticmethod
-    def get_amc(amc_id):
-        """
-        Get an AMC by ID
-        
-        Args:
-            amc_id (int): AMC ID
-            
-        Returns:
-            Amc: The requested AMC
-            
-        Raises:
-            ResourceNotFoundError: If AMC does not exist
-        """
-        amc = Amc.query.get(amc_id)
-        if not amc:
-            raise ResourceNotFoundError(f"AMC with ID {amc_id} not found")
-        return amc
-    
-    @staticmethod
-    def get_all_amcs():
-        """
-        Get all AMCs
-        
-        Returns:
-            list: List of all AMCs
-        """
-        return Amc.query.all()
-    
-    @staticmethod
-    def create_fund(name, amc_id, short_name=None, rta_code=None, bse_code=None, active=True, direct=False):
-        """
-        Create a new fund
+        Create a new fund with integrated AMC details
         
         Args:
             name (str): Fund name
-            amc_id (int): AMC ID
-            short_name (str, optional): Short name
+            amc_name (str): AMC name
+            amc_short_name (str): AMC short name
+            short_name (str, optional): Fund short name
+            fund_code (str, optional): Fund code
             rta_code (str, optional): RTA code
             bse_code (str, optional): BSE code
+            fund_type (str, optional): Type of fund (Equity, Debt, etc.)
+            fund_category (str, optional): Fund category (Large Cap, Mid Cap, etc.)
             active (bool, optional): Active status
             direct (bool, optional): Direct plan indicator
             
@@ -772,17 +708,25 @@ class FundService:
             Fund: The created fund
             
         Raises:
-            ResourceNotFoundError: If AMC does not exist
+            UniqueConstraintError: If fund BSE code already exists
         """
-        # Verify AMC exists
-        amc = FundService.get_amc(amc_id)
+        # Check if fund BSE code already exists if provided
+        if bse_code:
+            existing_fund = Fund.query.filter_by(bse_code=bse_code).first()
+            if existing_fund:
+                raise UniqueConstraintError(f"Fund with BSE code '{bse_code}' already exists")
         
+        # Create fund with integrated AMC details
         fund = Fund(
             name=name,
-            amc_id=amc_id,
+            amc_name=amc_name,
+            amc_short_name=amc_short_name,
             short_name=short_name,
+            fund_code=fund_code,
             rta_code=rta_code,
             bse_code=bse_code,
+            fund_type=fund_type,
+            fund_category=fund_category,
             active=active,
             direct=direct
         )
@@ -817,32 +761,46 @@ class FundService:
         return fund
     
     @staticmethod
-    def get_funds_by_amc(amc_id):
+    def get_funds_by_amc_name(amc_name):
         """
-        Get all funds for an AMC
+        Get all funds for an AMC by name
         
         Args:
-            amc_id (int): AMC ID
+            amc_name (str): AMC name
             
         Returns:
             list: List of funds
+        """
+        return Fund.query.filter_by(amc_name=amc_name).all()
+        
+    @staticmethod
+    def get_fund_by_bse_code(bse_code):
+        """
+        Get a fund by BSE code
+        
+        Args:
+            bse_code (str): BSE code
+            
+        Returns:
+            Fund: The requested fund
             
         Raises:
-            ResourceNotFoundError: If AMC does not exist
+            ResourceNotFoundError: If fund does not exist
         """
-        # Verify AMC exists
-        amc = FundService.get_amc(amc_id)
-        
-        return Fund.query.filter_by(amc_id=amc_id).all()
+        fund = Fund.query.filter_by(bse_code=bse_code).first()
+        if not fund:
+            raise ResourceNotFoundError(f"Fund with BSE code {bse_code} not found")
+        return fund
     
     @staticmethod
-    def create_fund_scheme(fund_id, scheme_code, plan, option=None, bse_code=None):
+    def create_fund_scheme(fund_id, scheme_code, scheme_name, plan, option=None, bse_code=None):
         """
         Create a new fund scheme
         
         Args:
             fund_id (int): Fund ID
             scheme_code (str): Scheme code
+            scheme_name (str): Scheme name
             plan (str): Plan code
             option (str, optional): Option code
             bse_code (str, optional): BSE code
@@ -859,6 +817,7 @@ class FundService:
         scheme = FundScheme(
             fund_id=fund_id,
             scheme_code=scheme_code,
+            scheme_name=scheme_name,
             plan=plan,
             option=option,
             bse_code=bse_code
@@ -1019,7 +978,7 @@ class FundService:
         
         # Get fund house from scheme's fund if not provided
         if not fund_house:
-            fund_house = scheme.fund.amc.name
+            fund_house = scheme.fund.amc_name
         
         # Get category from scheme or fund if not provided
         if not category:
@@ -1239,6 +1198,137 @@ class FundService:
             raise ResourceNotFoundError(f"Returns data not found for scheme with ID {scheme_id} on {date}")
         
         db.session.delete(returns)
+        db.session.commit()
+        
+    @staticmethod
+    def create_fund_holding(scheme_id, security_name, asset_type, weightage, isin=None, sector=None, holding_value=None):
+        """
+        Create a new fund holding for a scheme
+        
+        Args:
+            scheme_id (int): Scheme ID
+            security_name (str): Name of the security (Stock/Bond/etc.)
+            asset_type (str): Type of asset (Equity, Debt, REITs, etc.)
+            weightage (float): Percentage allocation in the scheme
+            isin (str, optional): ISIN code of the security
+            sector (str, optional): Sector classification
+            holding_value (float, optional): Value of holding in the scheme
+            
+        Returns:
+            FundHolding: The created fund holding
+            
+        Raises:
+            ResourceNotFoundError: If scheme does not exist
+            ValidationError: If weightage is negative
+        """
+        # Verify scheme exists
+        scheme = FundService.get_fund_scheme(scheme_id)
+        
+        # Validate weightage
+        if weightage < 0:
+            raise ValidationError("Weightage cannot be negative")
+            
+        holding = FundHolding(
+            scheme_id=scheme_id,
+            scheme_code=scheme.scheme_code,
+            security_name=security_name,
+            isin=isin,
+            sector=sector,
+            asset_type=asset_type,
+            weightage=weightage,
+            holding_value=holding_value
+        )
+        
+        try:
+            db.session.add(holding)
+            db.session.commit()
+            return holding
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error creating fund holding: {str(e)}")
+            raise DatabaseError(f"Error creating fund holding: {str(e)}")
+            
+    @staticmethod
+    def get_fund_holdings(scheme_id):
+        """
+        Get all holdings for a fund scheme
+        
+        Args:
+            scheme_id (int): Scheme ID
+            
+        Returns:
+            list: List of fund holdings
+            
+        Raises:
+            ResourceNotFoundError: If scheme does not exist
+        """
+        # Verify scheme exists
+        scheme = FundService.get_fund_scheme(scheme_id)
+        
+        return FundHolding.query.filter_by(scheme_id=scheme_id).all()
+        
+    @staticmethod
+    def get_fund_holding(holding_id):
+        """
+        Get a specific fund holding by ID
+        
+        Args:
+            holding_id (int): Holding ID
+            
+        Returns:
+            FundHolding: The requested fund holding
+            
+        Raises:
+            ResourceNotFoundError: If holding does not exist
+        """
+        holding = FundHolding.query.get(holding_id)
+        if not holding:
+            raise ResourceNotFoundError(f"Fund holding with ID {holding_id} not found")
+        return holding
+        
+    @staticmethod
+    def update_fund_holding(holding_id, **kwargs):
+        """
+        Update a fund holding
+        
+        Args:
+            holding_id (int): Holding ID
+            **kwargs: Fields to update
+            
+        Returns:
+            FundHolding: The updated fund holding
+            
+        Raises:
+            ResourceNotFoundError: If holding does not exist
+            ValidationError: If weightage is negative
+        """
+        holding = FundService.get_fund_holding(holding_id)
+        
+        # Update fields
+        for key, value in kwargs.items():
+            if hasattr(holding, key) and key not in ['scheme_id', 'scheme_code']:
+                # Validate weightage
+                if key == 'weightage' and value < 0:
+                    raise ValidationError("Weightage cannot be negative")
+                setattr(holding, key, value)
+        
+        db.session.commit()
+        return holding
+        
+    @staticmethod
+    def delete_fund_holding(holding_id):
+        """
+        Delete a fund holding
+        
+        Args:
+            holding_id (int): Holding ID
+            
+        Raises:
+            ResourceNotFoundError: If holding does not exist
+        """
+        holding = FundService.get_fund_holding(holding_id)
+        
+        db.session.delete(holding)
         db.session.commit()
 
 
@@ -1466,106 +1556,6 @@ class PortfolioService:
             logger.error(f"Error updating holdings: {str(e)}")
             raise DatabaseError(f"Error updating holdings: {str(e)}")
             
-    @staticmethod
-    def create_fund_holding(scheme_id, security_name, asset_type, weightage, isin=None, sector=None, holding_value=None):
-        """
-        Create a new fund holding for a scheme
-        
-        Args:
-            scheme_id (int): Scheme ID
-            security_name (str): Name of the security
-            asset_type (str): Type of asset (Equity, Debt, etc.)
-            weightage (float): Percentage allocation in the scheme
-            isin (str, optional): ISIN code of the security
-            sector (str, optional): Sector classification
-            holding_value (float, optional): Value of holding
-            
-        Returns:
-            FundHolding: The created fund holding
-            
-        Raises:
-            ResourceNotFoundError: If scheme does not exist
-        """
-        # Verify scheme exists
-        scheme = FundService.get_fund_scheme(scheme_id)
-        
-        # Create fund holding
-        fund_holding = FundHolding(
-            scheme_id=scheme_id,
-            security_name=security_name,
-            isin=isin,
-            sector=sector,
-            asset_type=asset_type,
-            weightage=weightage,
-            holding_value=holding_value,
-            last_updated=datetime.utcnow()
-        )
-        
-        try:
-            db.session.add(fund_holding)
-            db.session.commit()
-            logger.info(f"Fund holding created for scheme: {scheme_id}")
-            return fund_holding
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Error creating fund holding: {str(e)}")
-            raise DatabaseError(f"Error creating fund holding: {str(e)}")
-    
-    @staticmethod
-    def get_fund_holdings(scheme_id):
-        """
-        Get all holdings for a scheme
-        
-        Args:
-            scheme_id (int): Scheme ID
-            
-        Returns:
-            list: List of fund holdings
-            
-        Raises:
-            ResourceNotFoundError: If scheme does not exist
-        """
-        # Verify scheme exists
-        scheme = FundService.get_fund_scheme(scheme_id)
-        
-        return FundHolding.query.filter_by(scheme_id=scheme_id).all()
-    
-    @staticmethod
-    def get_fund_holding(holding_id):
-        """
-        Get a fund holding by ID
-        
-        Args:
-            holding_id (int): Holding ID
-            
-        Returns:
-            FundHolding: The requested fund holding
-            
-        Raises:
-            ResourceNotFoundError: If holding does not exist
-        """
-        holding = FundHolding.query.get(holding_id)
-        if not holding:
-            logger.error(f"Fund holding not found: {holding_id}")
-            raise ResourceNotFoundError(f"Fund holding not found: {holding_id}")
-        
-        return holding
-    
-    @staticmethod
-    def update_fund_holding(holding_id, **kwargs):
-        """
-        Update a fund holding
-        
-        Args:
-            holding_id (int): Holding ID
-            **kwargs: Fields to update
-            
-        Returns:
-            FundHolding: The updated fund holding
-            
-        Raises:
-            ResourceNotFoundError: If holding does not exist
-        """
         # Get the holding directly
         holding = FundHolding.query.get(holding_id)
         if not holding:

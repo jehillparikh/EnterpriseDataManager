@@ -43,14 +43,25 @@ def token_required(f):
         
         try:
             # Decode token
+            print(f"DEBUG - Decoding token: {token}")
             data = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
-            current_user = UserService.get_user(data['user_id'])
-        except jwt.ExpiredSignatureError:
+            print(f"DEBUG - Token data: {data}")
+            # Convert sub (string) back to int for database lookup
+            user_id = int(data['sub'])
+            current_user = UserService.get_user(user_id)
+            print(f"DEBUG - Found user: {current_user.id}")
+        except jwt.ExpiredSignatureError as e:
+            print(f"DEBUG - Token expired: {str(e)}")
             return jsonify({'message': 'Token has expired!'}), 401
-        except jwt.InvalidTokenError:
+        except jwt.InvalidTokenError as e:
+            print(f"DEBUG - Invalid token: {str(e)}")
             return jsonify({'message': 'Invalid token!'}), 401
-        except ResourceNotFoundError:
+        except ResourceNotFoundError as e:
+            print(f"DEBUG - User not found: {str(e)}")
             return jsonify({'message': 'User not found!'}), 401
+        except Exception as e:
+            print(f"DEBUG - Unexpected error: {str(e)}")
+            return jsonify({'message': f'Error processing token: {str(e)}'}), 401
         
         return f(current_user, *args, **kwargs)
     
@@ -122,7 +133,8 @@ def login():
         # Generate token
         token = jwt.encode(
             {
-                'user_id': user.id,
+                'sub': str(user.id),  # Convert ID to string for JWT compliance
+                'iat': datetime.datetime.utcnow(),
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
             },
             JWT_SECRET_KEY,
@@ -430,64 +442,124 @@ def create_amc(current_user):
     except SchemaValidationError as e:
         return jsonify({"error": e.messages}), 400
 
-@api_bp.route('/amcs/<int:amc_id>', methods=['GET'])
-def get_amc(amc_id):
-    """Get an AMC by ID"""
+@api_bp.route('/amcs/<string:amc_name>', methods=['GET'])
+def get_amc(amc_name):
+    """Get an AMC by name"""
     try:
-        amc = FundService.get_amc(amc_id)
+        funds = FundService.get_funds_by_amc_name(amc_name)
         
-        return jsonify({
-            "id": amc.id,
-            "name": amc.name,
-            "short_name": amc.short_name,
-            "fund_code": amc.fund_code,
-            "bse_code": amc.bse_code,
-            "active": amc.active
-        }), 200
+        # Return first fund's AMC details since AMCs are now part of the Fund model
+        if funds:
+            fund = funds[0]
+            return jsonify({
+                "amc_name": fund.amc_name,
+                "amc_short_name": fund.amc_short_name,
+                "fund_code": fund.fund_code,
+                "bse_code": fund.bse_code,
+                "active": fund.active
+            }), 200
+        else:
+            raise ResourceNotFoundError(f"No funds found for AMC {amc_name}")
     except ResourceNotFoundError:
-        return jsonify({"error": f"AMC with ID {amc_id} not found"}), 404
+        return jsonify({"error": f"AMC with name {amc_name} not found"}), 404
 
 # Fund Routes
-@api_bp.route('/amcs/<int:amc_id>/funds', methods=['GET'])
-def get_funds_by_amc(amc_id):
-    """Get all funds for an AMC"""
-    try:
-        funds = FundService.get_funds_by_amc(amc_id)
-        
-        return jsonify([{
-            "id": fund.id,
-            "name": fund.name,
-            "short_name": fund.short_name,
-            "amc_id": fund.amc_id,
-            "rta_code": fund.rta_code,
-            "bse_code": fund.bse_code,
-            "active": fund.active,
-            "direct": fund.direct
-        } for fund in funds]), 200
-    except ResourceNotFoundError:
-        return jsonify({"error": f"AMC with ID {amc_id} not found"}), 404
-        
-@api_bp.route('/amcs/<int:amc_id>/funds', methods=['POST'])
+@api_bp.route('/funds', methods=['POST'])
 @token_required
-def create_fund(current_user, amc_id):
-    """Create a new fund under an AMC"""
+def create_fund_direct(current_user):
+    """Create a new fund directly"""
     try:
         # Validate request data
         data = request.get_json()
         if not data:
             return jsonify({"error": "No input data provided"}), 400
             
-        # Add amc_id to the data before validation
-        data['amc_id'] = amc_id
-        validated_data = fund_schema.load(data)
+        validated_data = data
         
         # Create fund
         fund = FundService.create_fund(
             name=validated_data['name'],
-            amc_id=validated_data['amc_id'],
+            amc_name=validated_data['amc_name'],
+            amc_short_name=validated_data['amc_short_name'],
             short_name=validated_data.get('short_name'),
+            fund_code=validated_data.get('fund_code'),
             rta_code=validated_data.get('rta_code'),
             bse_code=validated_data.get('bse_code'),
+            fund_type=validated_data.get('fund_type'),
+            fund_category=validated_data.get('fund_category'),
+            active=validated_data.get('active', True),
+            direct=validated_data.get('direct', False)
+        )
+        
+        return jsonify({
+            "id": fund.id,
+            "name": fund.name,
+            "amc_name": fund.amc_name,
+            "amc_short_name": fund.amc_short_name,
+            "short_name": fund.short_name,
+            "fund_code": fund.fund_code,
+            "rta_code": fund.rta_code,
+            "bse_code": fund.bse_code,
+            "fund_type": fund.fund_type,
+            "fund_category": fund.fund_category,
+            "active": fund.active,
+            "direct": fund.direct
+        }), 201
+    except SchemaValidationError as e:
+        return jsonify({"error": e.messages}), 400
+    except UniqueConstraintError as e:
+        return jsonify({"error": str(e)}), 409
+    except Exception as e:
+        return jsonify({"error": f"Error creating fund: {str(e)}"}), 500
+
+@api_bp.route('/amcs/<string:amc_name>/funds', methods=['GET'])
+def get_funds_by_amc(amc_name):
+    """Get all funds for an AMC by name"""
+    try:
+        funds = FundService.get_funds_by_amc_name(amc_name)
+        
+        return jsonify([{
+            "id": fund.id,
+            "name": fund.name,
+            "short_name": fund.short_name,
+            "amc_name": fund.amc_name,
+            "amc_short_name": fund.amc_short_name,
+            "rta_code": fund.rta_code,
+            "bse_code": fund.bse_code,
+            "fund_type": fund.fund_type,
+            "fund_category": fund.fund_category,
+            "active": fund.active,
+            "direct": fund.direct
+        } for fund in funds]), 200
+    except ResourceNotFoundError:
+        return jsonify({"error": f"AMC with name {amc_name} not found"}), 404
+        
+@api_bp.route('/amcs/<string:amc_name>/funds', methods=['POST'])
+@token_required
+def create_fund(current_user, amc_name):
+    """Create a new fund under an AMC by name"""
+    try:
+        # Validate request data
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No input data provided"}), 400
+            
+        # Extract AMC details from the request or use the path parameter
+        amc_name = data.get('amc_name', amc_name)
+        amc_short_name = data.get('amc_short_name', '')
+        validated_data = data
+        
+        # Create fund
+        fund = FundService.create_fund(
+            name=validated_data['name'],
+            amc_name=amc_name,
+            amc_short_name=amc_short_name,
+            short_name=validated_data.get('short_name'),
+            fund_code=validated_data.get('fund_code'),
+            rta_code=validated_data.get('rta_code'),
+            bse_code=validated_data.get('bse_code'),
+            fund_type=validated_data.get('fund_type'),
+            fund_category=validated_data.get('fund_category'),
             active=validated_data.get('active', True),
             direct=validated_data.get('direct', False)
         )
@@ -497,10 +569,13 @@ def create_fund(current_user, amc_id):
             "fund": {
                 "id": fund.id,
                 "name": fund.name,
+                "amc_name": fund.amc_name,
+                "amc_short_name": fund.amc_short_name,
                 "short_name": fund.short_name,
-                "amc_id": fund.amc_id,
                 "rta_code": fund.rta_code,
                 "bse_code": fund.bse_code,
+                "fund_type": fund.fund_type,
+                "fund_category": fund.fund_category,
                 "active": fund.active,
                 "direct": fund.direct
             }
@@ -519,10 +594,13 @@ def get_fund(fund_id):
         return jsonify({
             "id": fund.id,
             "name": fund.name,
+            "amc_name": fund.amc_name,
+            "amc_short_name": fund.amc_short_name,
             "short_name": fund.short_name,
-            "amc_id": fund.amc_id,
             "rta_code": fund.rta_code,
             "bse_code": fund.bse_code,
+            "fund_type": fund.fund_type,
+            "fund_category": fund.fund_category,
             "active": fund.active,
             "direct": fund.direct
         }), 200

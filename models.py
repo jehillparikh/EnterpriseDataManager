@@ -142,38 +142,33 @@ class Mandate(db.Model):
 
 
 # Fund Management Models
-class Amc(db.Model):
-    """
-    Asset Management Company (AMC) table.
-    """
-    __tablename__ = 'amc'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique=True, nullable=False)
-    short_name = db.Column(db.String(20), nullable=False)
-    fund_code = db.Column(db.String(10), nullable=True)
-    bse_code = db.Column(db.String(10), nullable=True)
-    active = db.Column(db.Boolean, default=True, nullable=False)
-
-    funds = relationship("Fund", back_populates="amc")
-
-
 class Fund(db.Model):
     """
-    Mutual Fund table.
+    Mutual Fund table with integrated AMC details.
     """
     __tablename__ = 'fund'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     short_name = db.Column(db.String(20), nullable=True)
-    amc_id = db.Column(db.Integer, db.ForeignKey('amc.id'), nullable=False)
+    # AMC details integrated into Fund model
+    amc_name = db.Column(db.String(100), nullable=False)
+    amc_short_name = db.Column(db.String(20), nullable=True)
+    fund_code = db.Column(db.String(10), nullable=True)
     rta_code = db.Column(db.String(10), nullable=True)
-    bse_code = db.Column(db.String(10), nullable=True)
+    bse_code = db.Column(db.String(10), nullable=True, unique=True)  # Unique BSE code for fund
     active = db.Column(db.Boolean, default=True, nullable=False)
     direct = db.Column(db.Boolean, default=False, nullable=False)
-
+    # Added additional fields
+    fund_type = db.Column(db.String(50), nullable=True)  # Equity, Debt, Hybrid, etc.
+    fund_category = db.Column(db.String(50), nullable=True)  # Large Cap, Mid Cap, etc.
+    
     # Relationships
-    amc = relationship("Amc", back_populates="funds")
     schemes = relationship("FundScheme", back_populates="fund")
+
+    __table_args__ = (
+        Index('idx_fund_amc_name', 'amc_name'),  # Optimize AMC lookups
+        Index('idx_fund_bse_code', 'bse_code'),  # Optimize BSE code lookups
+    )
 
 
 class FundScheme(db.Model):
@@ -183,7 +178,8 @@ class FundScheme(db.Model):
     __tablename__ = 'fund_scheme'
     id = db.Column(db.Integer, primary_key=True)
     fund_id = db.Column(db.Integer, db.ForeignKey('fund.id'), nullable=False)
-    scheme_code = db.Column(db.String(10), nullable=False)
+    scheme_code = db.Column(db.String(20), nullable=False, unique=True)  # Made scheme_code unique
+    scheme_name = db.Column(db.String(100), nullable=False)  # Added scheme name
     plan = db.Column(db.String(10), nullable=False)  # e.g., "G" for Growth, "ID" for Dividend  "Direct"
     option = db.Column(db.String(10), nullable=True)  # e.g., "Payout" or "Reinvestment"
     bse_code = db.Column(db.String(10), nullable=True)
@@ -191,6 +187,10 @@ class FundScheme(db.Model):
     # Relationships
     fund = relationship("Fund", back_populates="schemes")
     details = relationship("FundSchemeDetail", back_populates="scheme", cascade="all, delete-orphan")
+    
+    __table_args__ = (
+        Index('idx_scheme_code', 'scheme_code'),  # Optimize scheme code lookups
+    )
 
 
 class FundSchemeDetail(db.Model):
@@ -236,11 +236,16 @@ class DividendPayout(db.Model):
     """
     __tablename__ = 'dividend_payout'
     id = db.Column(db.Integer, primary_key=True)
-    scheme_id = db.Column(db.Integer, db.ForeignKey('fund_scheme.id'), nullable=False)
+    scheme_code = db.Column(db.String(20), db.ForeignKey('fund_scheme.scheme_code'), nullable=False)  # Use scheme_code as foreign key
     amount = db.Column(db.Float, nullable=False)
     payout_date = db.Column(db.Date, nullable=False)
 
-    scheme = relationship("FundScheme", backref="dividends")
+    # Relationships
+    scheme = relationship("FundScheme", foreign_keys=[scheme_code], backref="scheme_dividends")
+    
+    __table_args__ = (
+        Index('idx_scheme_code_payout_date', 'scheme_code', 'payout_date'),  # Optimize lookups by scheme_code and date
+    )
 
 
 class NavHistory(db.Model):
@@ -249,11 +254,16 @@ class NavHistory(db.Model):
     """
     __tablename__ = 'nav_history'
     id = db.Column(db.Integer, primary_key=True)
-    scheme_id = db.Column(db.Integer, db.ForeignKey('fund_scheme.id'), nullable=False)
+    scheme_code = db.Column(db.String(20), db.ForeignKey('fund_scheme.scheme_code'), nullable=False)  # Use scheme_code as foreign key
     nav = db.Column(db.Float, nullable=False)
     date = db.Column(db.Date, nullable=False)
 
-    scheme = relationship("FundScheme", backref="nav_history")
+    # Relationships
+    scheme = relationship("FundScheme", foreign_keys=[scheme_code], backref="scheme_nav_history")
+    
+    __table_args__ = (
+        Index('idx_scheme_code_date_nav', 'scheme_code', 'date'),  # Optimize lookups by scheme_code and date
+    )
 
 
 class Returns(db.Model):
@@ -262,7 +272,7 @@ class Returns(db.Model):
     """
     __tablename__ = 'returns'
     id = db.Column(db.Integer, primary_key=True)
-    scheme_id = db.Column(db.Integer, db.ForeignKey('fund_scheme.id'), nullable=False)
+    scheme_code = db.Column(db.String(20), db.ForeignKey('fund_scheme.scheme_code'), nullable=False)  # Use scheme_code as foreign key
     date = db.Column(db.Date, nullable=False)  # Date of return calculation
     return_1m = db.Column(db.Float, nullable=True)  # 1-month return
     return_3m = db.Column(db.Float, nullable=True)  # 3-month return
@@ -271,12 +281,12 @@ class Returns(db.Model):
     return_1y = db.Column(db.Float, nullable=True)  # 1-year return
     return_3y = db.Column(db.Float, nullable=True)  # 3-year return
     return_5y = db.Column(db.Float, nullable=True)  # 5-year return
-    scheme_code = db.Column(db.String(20), nullable=False)  # Unique scheme code
-
-    scheme = relationship("FundScheme", backref="returns")
+    
+    # Relationships
+    scheme = relationship("FundScheme", foreign_keys=[scheme_code], backref="scheme_returns")
 
     __table_args__ = (
-        Index('idx_scheme_date', 'scheme_id', 'date'),  # Optimize queries
+        Index('idx_scheme_code_date', 'scheme_code', 'date'),  # Optimize queries by scheme_code
         CheckConstraint('return_1m >= -100', name='check_return_1m'),  # Ensure reasonable return values
         CheckConstraint('return_3m >= -100', name='check_return_3m'),
         CheckConstraint('return_6m >= -100', name='check_return_6m'),
@@ -293,7 +303,7 @@ class FundHolding(db.Model):
     """
     __tablename__ = 'fund_holdings'
     id = db.Column(db.Integer, primary_key=True)
-    scheme_id = db.Column(db.Integer, db.ForeignKey('fund_scheme.id'), nullable=False)  # Reference to mutual fund scheme
+    scheme_code = db.Column(db.String(20), db.ForeignKey('fund_scheme.scheme_code'), nullable=False)  # Use scheme_code as foreign key
     security_name = db.Column(db.String(255), nullable=False)  # Name of the security (Stock/Bond/etc.)
     isin = db.Column(db.String(20), nullable=True)  # ISIN code of the security
     sector = db.Column(db.String(100), nullable=True)  # Sector classification
@@ -302,10 +312,11 @@ class FundHolding(db.Model):
     holding_value = db.Column(db.Float, nullable=True)  # Value of holding in the scheme
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # Auto-update timestamp
 
-    scheme = relationship("FundScheme", backref="fund_holdings")
+    # Relationships
+    scheme = relationship("FundScheme", foreign_keys=[scheme_code], backref="scheme_holdings")
 
     __table_args__ = (
-        Index('idx_scheme_security', 'scheme_id', 'security_name'),  # Optimized lookup
+        Index('idx_scheme_code_security', 'scheme_code', 'security_name'),  # Optimized lookup by scheme_code
         CheckConstraint('weightage >= 0', name='check_weightage'),  # No negative weightage
     )
 
@@ -316,7 +327,7 @@ class FundFactSheet(db.Model):
     """
     __tablename__ = 'fund_factsheet'
     id = db.Column(db.Integer, primary_key=True)
-    scheme_id = db.Column(db.Integer, db.ForeignKey('fund_scheme.id'), nullable=False, unique=True)  # One fact sheet per scheme
+    scheme_code = db.Column(db.String(20), db.ForeignKey('fund_scheme.scheme_code'), nullable=False, unique=True)  # Use scheme_code as foreign key
     fund_manager = db.Column(db.String(255), nullable=True)  # Fund manager's name
     fund_house = db.Column(db.String(255), nullable=False)  # AMC or Fund House
     inception_date = db.Column(db.Date, nullable=True)  # Fund inception date
@@ -329,10 +340,11 @@ class FundFactSheet(db.Model):
     holdings_count = db.Column(db.Integer, nullable=True)  # Number of holdings in the fund
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # Auto-update timestamp
 
-    scheme = relationship("FundScheme", backref="fund_factsheet")
+    # Relationships
+    scheme = relationship("FundScheme", foreign_keys=[scheme_code], backref="scheme_factsheet")
 
     __table_args__ = (
-        Index('idx_factsheet_scheme', 'scheme_id'),  # Optimized lookup
+        Index('idx_factsheet_scheme_code', 'scheme_code'),  # Optimized lookup by scheme_code
     )
 
 
@@ -343,8 +355,7 @@ class UserPortfolio(db.Model):
     __tablename__ = 'user_portfolio'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user_info.id'), nullable=False)  # Reference to user
-    scheme_id = db.Column(db.Integer, db.ForeignKey('fund_scheme.id'), nullable=False)  # Reference to mutual fund scheme
-    scheme_code = db.Column(db.String(20), nullable=False)  # Scheme code
+    scheme_code = db.Column(db.String(20), db.ForeignKey('fund_scheme.scheme_code'), nullable=False)  # Use scheme_code as foreign key
     units = db.Column(db.Float, nullable=False)  # Number of units held
     purchase_nav = db.Column(db.Float, nullable=False)  # NAV at purchase time
     current_nav = db.Column(db.Float, nullable=True)  # Latest NAV
@@ -353,11 +364,12 @@ class UserPortfolio(db.Model):
     date_invested = db.Column(db.Date, nullable=False)  # Date of investment
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # Auto-update timestamp
 
-    user = relationship("UserInfo", backref="portfolio")
-    scheme = relationship("FundScheme", backref="portfolio")
+    # Relationships
+    user = relationship("UserInfo", backref="user_portfolio")
+    scheme = relationship("FundScheme", foreign_keys=[scheme_code], backref="invested_portfolios")
 
     __table_args__ = (
-        Index('idx_user_scheme', 'user_id', 'scheme_id'),  # Optimize user portfolio lookups
+        Index('idx_user_scheme_code', 'user_id', 'scheme_code'),  # Optimize user portfolio lookups by scheme_code
         CheckConstraint('units >= 0', name='check_units'),  # No negative units
         CheckConstraint('invested_amount >= 0', name='check_invested_amount'),  # No negative investments
     )
@@ -368,21 +380,22 @@ class MFHoldings(db.Model):
     Tracks accumulated holdings per user per scheme.
     """
     __tablename__ = 'mf_holdings'
-    id = db.Column(Integer, primary_key=True)
-    user_id = db.Column(Integer, db.ForeignKey('user_info.id'), nullable=False)
-    scheme_id = db.Column(Integer, db.ForeignKey('fund_scheme.id'), nullable=False)
-    units_held = db.Column(Float, nullable=False, default=0)  # Total units held
-    average_nav = db.Column(Float, nullable=False, default=0)  # Average purchase NAV
-    invested_amount = db.Column(Float, nullable=False, default=0)  # Total amount invested
-    current_value = db.Column(Float, nullable=True)  # Current value based on latest NAV
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user_info.id'), nullable=False)
+    scheme_code = db.Column(db.String(20), db.ForeignKey('fund_scheme.scheme_code'), nullable=False)  # Use scheme_code as foreign key
+    units_held = db.Column(db.Float, nullable=False, default=0)  # Total units held
+    average_nav = db.Column(db.Float, nullable=False, default=0)  # Average purchase NAV
+    invested_amount = db.Column(db.Float, nullable=False, default=0)  # Total amount invested
+    current_value = db.Column(db.Float, nullable=True)  # Current value based on latest NAV
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    user = relationship("UserInfo", backref="mf_holdings")
-    scheme = relationship("FundScheme", backref="mf_holdings")
+    # Relationships
+    user = relationship("UserInfo", backref="user_holdings")
+    scheme = relationship("FundScheme", foreign_keys=[scheme_code], backref="scheme_holdings_aggregate")
 
     __table_args__ = (
-        Index('idx_user_scheme_holdings', 'user_id', 'scheme_id'),
-        CheckConstraint('units_held >= 0', name='check_units_held'),
+        Index('idx_user_scheme_code_holdings', 'user_id', 'scheme_code'),  # Optimize by user_id and scheme_code
+        CheckConstraint('units_held >= 0', name='check_units_held'),  # No negative units
     )
 
 
@@ -392,9 +405,16 @@ class FundRating(db.Model):
     """
     __tablename__ = 'fund_rating'
     id = db.Column(db.Integer, primary_key=True)
-    fund_id = db.Column(db.Integer, db.ForeignKey('fund.id'), nullable=False)
-    rating_agency = db.Column(db.String(50), nullable=True)  # e.g., Morningstar
-    rating_value = db.Column(db.Integer, CheckConstraint('rating_value >= 1 AND rating_value <= 5'), nullable=True)
-    last_updated = db.Column(db.Date, nullable=False)
+    fund_code = db.Column(db.String(10), db.ForeignKey('fund.bse_code'), nullable=False)  # Use fund's bse_code as foreign key
+    rating_agency = db.Column(db.String(50), nullable=False)  # e.g., Morningstar, CRISIL
+    rating_value = db.Column(db.Integer, nullable=False)  # Rating value (1-5)
+    rating_date = db.Column(db.Date, nullable=False)  # Date when rating was assigned
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # Auto-update timestamp
 
-    fund = relationship("Fund", backref="ratings")
+    # Relationships
+    fund = relationship("Fund", foreign_keys=[fund_code], backref="fund_ratings")
+    
+    __table_args__ = (
+        Index('idx_fund_code_rating', 'fund_code', 'rating_agency'),  # Optimize lookups by fund_code and agency
+        CheckConstraint('rating_value >= 1 AND rating_value <= 5', name='check_rating_value'),  # Valid rating range
+    )

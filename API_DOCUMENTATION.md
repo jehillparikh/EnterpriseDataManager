@@ -4,6 +4,16 @@
 
 This API provides a comprehensive set of endpoints for managing mutual funds, including user management, KYC verification, bank details, AMCs, funds, fund schemes, fund details, portfolio management, and fund holdings.
 
+### Key Features
+
+- **User Authentication**: JWT-based authentication system
+- **KYC Verification**: Integration with Hyperverge for KYC verification
+- **Fund Management**: Complete CRUD operations for AMCs, funds, and schemes
+- **Portfolio Tracking**: User portfolio management with current value calculation
+- **Fund Holdings**: Track individual securities within mutual fund schemes
+- **Returns Analysis**: Track historical returns across multiple time periods
+- **BSE Star Integration**: Client registration and transaction processing
+
 ## Base URL
 
 All API requests should be prefixed with `/api`.
@@ -1083,6 +1093,21 @@ The API integrates with Hyperverge for KYC verification. This includes:
 2. Face matching between selfie and ID
 3. Liveness detection
 
+#### Configuration
+
+The Hyperverge integration requires the following environment variables:
+
+- `HYPERVERGE_APP_ID`: Your Hyperverge application ID
+- `HYPERVERGE_APP_KEY`: Your Hyperverge application key
+
+#### API Endpoints
+
+The Hyperverge service provides the following functionality:
+
+- Verify ID card (PAN, Aadhaar, etc.)
+- Verify face match between selfie and ID
+- Verify liveness using video
+
 ### BSE Star Integration
 
 The API integrates with BSE Star for:
@@ -1092,6 +1117,22 @@ The API integrates with BSE Star for:
 3. Mandate registration
 4. Purchase transactions
 5. Redemption transactions
+
+#### Configuration
+
+The BSE Star integration requires the following environment variables:
+
+- `BSE_STAR_API_KEY`: Your BSE Star API key
+
+#### API Endpoints
+
+The BSE Star service provides the following functionality:
+
+- Register a client with BSE Star
+- Register a bank account for a client
+- Register a mandate for a client
+- Execute purchase transactions
+- Execute redemption transactions
 
 ## Database Models
 
@@ -1109,3 +1150,58 @@ The API uses the following main database models:
 10. Returns: Historical returns for a fund scheme
 11. FundHolding: Holdings of a fund scheme
 12. Portfolio: User's investments in funds
+
+## Security Considerations
+
+### Authentication Security
+- JWT tokens expire after 24 hours
+- Passwords are hashed using Werkzeug's security functions
+- Sensitive routes require authentication via JWT token
+- Failed login attempts are logged for security monitoring
+
+### Data Security
+- PAN numbers and other sensitive data stored securely
+- Input validation enforced on all endpoints
+- Database constraints ensure data integrity
+- Regular security audits recommended
+
+### API Best Practices
+- Use HTTPS for all API calls in production
+- Store JWT tokens securely (HTTP-only cookies recommended for web applications)
+- Implement rate limiting in production environments
+- Refresh tokens periodically
+- Never expose tokens in URLs or log files
+
+## Rate Limiting
+
+The API implements rate limiting in production to prevent abuse:
+- 100 requests per minute for authenticated users
+- 20 requests per minute for unauthenticated users
+
+## Environment Variables
+
+The following environment variables should be configured:
+
+- `DATABASE_URL`: PostgreSQL database connection URL
+- `SESSION_SECRET`: Secret key for JWT token generation
+- `HYPERVERGE_APP_ID`: Hyperverge application ID
+- `HYPERVERGE_APP_KEY`: Hyperverge application key
+- `BSE_STAR_API_KEY`: BSE Star API key
+
+## Common Use Cases
+
+### Onboarding a New User
+1. Register user account
+2. Complete KYC verification
+3. Add bank details
+4. Register with BSE Star
+
+### Adding a Fund to Portfolio
+1. Find fund through AMC listings
+2. View fund details and returns
+3. Add to portfolio with purchase details
+
+### Tracking Portfolio Performance
+1. Retrieve portfolio details
+2. View current values and returns
+3. Compare with benchmark indices
