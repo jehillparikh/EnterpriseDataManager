@@ -395,17 +395,23 @@ def get_bank_details(current_user):
 # AMC Routes
 @api_bp.route('/amcs', methods=['GET'])
 def get_amcs():
-    """Get all AMCs"""
-    amcs = FundService.get_all_amcs()
+    """Get all unique AMCs from funds"""
+    # Get unique AMC entries from funds
+    funds = Fund.query.with_entities(
+        Fund.amc_name, 
+        Fund.amc_short_name,
+        Fund.fund_code,
+        Fund.bse_code,
+        Fund.active
+    ).distinct().all()
     
     return jsonify([{
-        "id": amc.id,
-        "name": amc.name,
-        "short_name": amc.short_name,
-        "fund_code": amc.fund_code,
-        "bse_code": amc.bse_code,
-        "active": amc.active
-    } for amc in amcs]), 200
+        "name": fund.amc_name,
+        "short_name": fund.amc_short_name,
+        "fund_code": fund.fund_code,
+        "bse_code": fund.bse_code,
+        "active": fund.active
+    } for fund in funds]), 200
 
 @api_bp.route('/amcs', methods=['POST'])
 @token_required
