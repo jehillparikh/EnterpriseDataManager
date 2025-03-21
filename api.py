@@ -1180,7 +1180,6 @@ def delete_portfolio_entry(current_user, portfolio_id):
         return jsonify({"error": f"Portfolio entry with ID {portfolio_id} not found"}), 404
 
 # Setup function to register blueprint
-# Fund Holdings Routes
 @api_bp.route('/schemes/<int:scheme_id>/holdings', methods=['POST'])
 def create_fund_holding(scheme_id):
     """Create a new fund holding for a scheme"""
