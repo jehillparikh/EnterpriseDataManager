@@ -439,6 +439,7 @@ dependencies = [
     { name = "psycopg2-binary" },
     { name = "pyjwt" },
     { name = "pytest" },
+    { name = "requests" },
     { name = "sqlalchemy" },
     { name = "werkzeug" },
 ]
@@ -456,6 +457,7 @@ requires-dist = [
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
     { name = "pyjwt", specifier = ">=2.10.1" },
     { name = "pytest", specifier = ">=8.3.5" },
+    { name = "requests", specifier = ">=2.32.3" },
     { name = "sqlalchemy", specifier = ">=2.0.39" },
     { name = "werkzeug", specifier = ">=3.1.3" },
 ]
