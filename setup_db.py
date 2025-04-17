@@ -40,7 +40,8 @@ def create_app():
     app = Flask(__name__)
     
     # Configure database
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+    database_url = "postgresql://userdatabase_740c_user:VswYN2reYmzvjgZ5QMkNugBPxYvzTe08@dpg-cvn3uaemcj7s73c3a8vg-a.singapore-postgres.render.com/userdatabase_740c"
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Initialize database
