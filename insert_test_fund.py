@@ -14,7 +14,7 @@ def insert_test_fund():
     with app.app_context():
         try:
             # Check if test fund already exists
-            test_isin = "TEST123456789"
+            test_isin = "TEST00000001"
             fund = Fund.query.filter_by(isin=test_isin).first()
             
             if not fund:
