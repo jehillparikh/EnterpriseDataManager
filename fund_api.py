@@ -322,6 +322,144 @@ def get_fund_all(isin):
         logger.error(f"Error getting all data for fund {isin}: {e}")
         return jsonify({'error': str(e)}), 500
 
+@fund_api.route('/api/funds/<isin>/complete', methods=['GET'])
+def get_fund_complete(isin):
+    """Get comprehensive fund data including factsheet, returns, latest NAV, portfolio holdings, and sector analysis"""
+    try:
+        # Get fund
+        fund = Fund.query.filter_by(isin=isin).first()
+        if not fund:
+            return jsonify({'error': f'Fund with ISIN {isin} not found'}), 404
+        
+        # Get factsheet
+        factsheet = FundFactSheet.query.filter_by(isin=isin).first()
+        factsheet_data = None
+        if factsheet:
+            factsheet_data = {
+                'fund_manager': factsheet.fund_manager,
+                'aum': factsheet.aum,
+                'expense_ratio': factsheet.expense_ratio,
+                'launch_date': factsheet.launch_date.isoformat() if factsheet.launch_date else None,
+                'exit_load': factsheet.exit_load,
+                'last_updated': factsheet.last_updated.isoformat() if factsheet.last_updated else None
+            }
+        
+        # Get returns
+        returns = FundReturns.query.filter_by(isin=isin).first()
+        returns_data = None
+        if returns:
+            returns_data = {
+                'return_1m': returns.return_1m,
+                'return_3m': returns.return_3m,
+                'return_6m': returns.return_6m,
+                'return_ytd': returns.return_ytd,
+                'return_1y': returns.return_1y,
+                'return_3y': returns.return_3y,
+                'return_5y': returns.return_5y,
+                'last_updated': returns.last_updated.isoformat() if returns.last_updated else None
+            }
+        
+        # Get NAV history (last 30 days)
+        nav_history = NavHistory.query.filter_by(isin=isin).order_by(NavHistory.date.desc()).limit(30).all()
+        nav_history_data = []
+        latest_nav = None
+        
+        if nav_history:
+            for nav in nav_history:
+                nav_history_data.append({
+                    'date': nav.date.isoformat(),
+                    'nav': nav.nav
+                })
+            
+            # First one is the most recent
+            if nav_history_data:
+                latest_nav = nav_history_data[0]
+        
+        # Get portfolio holdings
+        holdings = PortfolioHolding.query.filter_by(isin=isin).all()
+        holdings_data = []
+        
+        # Prepare data for sector analysis
+        sector_map = {}
+        equity_allocation = 0
+        debt_allocation = 0
+        cash_allocation = 0
+        other_allocation = 0
+        
+        if holdings:
+            for holding in holdings:
+                # Add to holdings list
+                holdings_data.append({
+                    'instrument_name': holding.instrument_name,
+                    'instrument_type': holding.instrument_type,
+                    'sector': holding.sector,
+                    'percentage_to_nav': holding.percentage_to_nav,
+                    'quantity': holding.quantity,
+                    'value': holding.value,
+                    'coupon': holding.coupon,
+                    'yield_value': holding.yield_value
+                })
+                
+                # Track sector allocation
+                if holding.sector:
+                    if holding.sector in sector_map:
+                        sector_map[holding.sector] += holding.percentage_to_nav
+                    else:
+                        sector_map[holding.sector] = holding.percentage_to_nav
+                
+                # Track asset class allocation
+                if holding.instrument_type == 'Equity':
+                    equity_allocation += holding.percentage_to_nav
+                elif holding.instrument_type == 'Debt':
+                    debt_allocation += holding.percentage_to_nav
+                elif holding.instrument_type == 'Cash':
+                    cash_allocation += holding.percentage_to_nav
+                else:
+                    other_allocation += holding.percentage_to_nav
+        
+        # Create top sectors list
+        top_sectors = []
+        for sector, allocation in sorted(sector_map.items(), key=lambda x: x[1], reverse=True):
+            top_sectors.append({
+                'sector': sector,
+                'allocation': allocation
+            })
+        
+        # Add asset allocation breakdown
+        asset_allocation = {
+            'equity': equity_allocation,
+            'debt': debt_allocation,
+            'cash': cash_allocation,
+            'other': other_allocation
+        }
+        
+        # Format complete response
+        response = {
+            'fund': {
+                'isin': fund.isin,
+                'scheme_name': fund.scheme_name,
+                'fund_type': fund.fund_type,
+                'fund_subtype': fund.fund_subtype,
+                'amc_name': fund.amc_name,
+                'created_at': fund.created_at.isoformat() if fund.created_at else None,
+                'updated_at': fund.updated_at.isoformat() if fund.updated_at else None
+            },
+            'factsheet': factsheet_data,
+            'returns': returns_data,
+            'latest_nav': latest_nav,
+            'nav_history': nav_history_data,
+            'holdings': holdings_data,
+            'analysis': {
+                'top_sectors': top_sectors,
+                'asset_allocation': asset_allocation
+            }
+        }
+        
+        return jsonify(response), 200
+    except Exception as e:
+        logger.error(f"Error getting complete data for fund {isin}: {e}")
+        return jsonify({'error': str(e)}), 500
+
 def init_fund_api(app):
     """Initialize fund API routes"""
     app.register_blueprint(fund_api)

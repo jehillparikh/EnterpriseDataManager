@@ -238,6 +238,94 @@ GET /funds/{isin}/all
 }
 ```
 
+### Get Complete Fund Data with Sector Analysis
+
+Retrieves comprehensive fund data including factsheet, returns, NAV history, portfolio holdings, and sector analysis.
+
+```
+GET /funds/{isin}/complete
+```
+
+**Response Format:**
+```json
+{
+  "fund": {
+    "isin": "TEST00000001",
+    "scheme_name": "Test HDFC Balanced Advantage Fund",
+    "fund_type": "Hybrid",
+    "fund_subtype": "Balanced Advantage",
+    "amc_name": "HDFC",
+    "created_at": "2025-04-17T03:41:26.955936",
+    "updated_at": "2025-04-17T03:41:26.955940"
+  },
+  "factsheet": {
+    "fund_manager": "Test Manager",
+    "aum": 10000.0,
+    "expense_ratio": 0.01,
+    "launch_date": "2020-01-01",
+    "exit_load": "1% for less than 1 year",
+    "last_updated": "2025-04-17T03:41:27.118692"
+  },
+  "returns": {
+    "return_1m": 1.5,
+    "return_3m": 4.2,
+    "return_6m": 8.7,
+    "return_ytd": 5.3,
+    "return_1y": 12.1,
+    "return_3y": 36.5,
+    "return_5y": 65.8,
+    "last_updated": "2025-04-17T03:41:27.281429"
+  },
+  "latest_nav": {
+    "date": "2025-04-17",
+    "nav": 104.1682
+  },
+  "nav_history": [
+    {
+      "date": "2025-04-17",
+      "nav": 104.1682
+    },
+    {
+      "date": "2025-04-16",
+      "nav": 104.1582
+    },
+    // Additional NAV history entries...
+  ],
+  "holdings": [
+    {
+      "instrument_name": "HDFC Bank Ltd",
+      "instrument_type": "Equity",
+      "sector": "Financial Services",
+      "percentage_to_nav": 12.5,
+      "quantity": 12500.0,
+      "value": 2500000.0,
+      "coupon": null,
+      "yield_value": null
+    },
+    // Additional holdings...
+  ],
+  "analysis": {
+    "top_sectors": [
+      {
+        "sector": "Financial Services",
+        "allocation": 16.5
+      },
+      {
+        "sector": "Information Technology",
+        "allocation": 16.5
+      },
+      // Additional sectors...
+    ],
+    "asset_allocation": {
+      "equity": 39.0,
+      "debt": 10.0,
+      "cash": 10.0,
+      "other": 0.0
+    }
+  }
+}
+```
+
 ## Error Responses
 
 The API returns appropriate HTTP status codes:

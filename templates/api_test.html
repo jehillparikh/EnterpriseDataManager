@@ -1,52 +1,64 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mutual Fund API Test Interface</title>
     <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
     <style>
-        pre {
-            background-color: var(--bs-dark-bg-subtle);
-            border-radius: 5px;
-            padding: 15px;
-            overflow: auto;
-            max-height: 400px;
-        }
         .endpoint-card {
             margin-bottom: 20px;
         }
         .endpoint-header {
             display: flex;
             align-items: center;
-            margin-bottom: 10px;
         }
         .method-badge {
             margin-right: 10px;
+            font-size: 0.8rem;
+            padding: 5px 8px;
+        }
+        pre {
+            background-color: #2c3136;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+        .top-section {
+            background-color: rgba(0, 0, 0, 0.15);
+            padding: 20px 0;
+            margin-bottom: 30px;
         }
     </style>
 </head>
 <body>
-    <div class="container my-4">
-        <div class="row">
-            <div class="col-12">
-                <h1 class="mb-4">Mutual Fund API Test Interface</h1>
-                <p class="lead">Use this interface to test the Mutual Fund API endpoints.</p>
-                
-                <div class="alert alert-info">
-                    <strong>Test ISIN:</strong> TEST00000001 - Use this ISIN for testing endpoints that require an ISIN.
+    <div class="top-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-3">Mutual Fund API</h1>
+                    <p class="lead">Test the mutual fund API endpoints and view responses in real-time</p>
                 </div>
-
-                <div class="mb-5">
-                    <label for="base-url" class="form-label">API Base URL</label>
-                    <input type="text" class="form-control" id="base-url" value="/api">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">API Base URL</h5>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="base-url" value="/api" readonly>
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyBaseUrl()">Copy</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="row">
-            <div class="col-md-6">
-                <!-- List Funds Endpoint -->
+    <div class="container">
+        <!-- Fund Listing Endpoint -->
+        <div class="row mt-3">
+            <div class="col-12">
                 <div class="card endpoint-card">
                     <div class="card-header">
                         <div class="endpoint-header">
@@ -55,32 +67,36 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <h6 class="card-subtitle mb-3 text-muted">Get all funds or filter by parameters</h6>
-                        <form id="get-funds-form">
-                            <div class="mb-3">
-                                <label class="form-label">AMC Name (optional)</label>
-                                <input type="text" class="form-control" name="amc">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Fund Type (optional)</label>
-                                <input type="text" class="form-control" name="type">
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col">
+                        <h6 class="card-subtitle mb-3 text-muted">Get a list of mutual funds with optional filters</h6>
+                        <form id="funds-list-form">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">AMC Name</label>
+                                    <input type="text" class="form-control" name="amc_name" placeholder="e.g. HDFC">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Fund Type</label>
+                                    <input type="text" class="form-control" name="fund_type" placeholder="e.g. Equity">
+                                </div>
+                                <div class="col-md-2">
                                     <label class="form-label">Page</label>
                                     <input type="number" class="form-control" name="page" value="1">
                                 </div>
-                                <div class="col">
+                                <div class="col-md-2">
                                     <label class="form-label">Per Page</label>
-                                    <input type="number" class="form-control" name="per_page" value="20">
+                                    <input type="number" class="form-control" name="per_page" value="10">
                                 </div>
                             </div>
-                            <button type="button" class="btn btn-primary" onclick="testEndpoint('get-funds-form', '/funds')">Test Endpoint</button>
+                            <button type="button" class="btn btn-primary mt-3" onclick="testEndpoint('funds-list-form', '/funds')">Test Endpoint</button>
                         </form>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Get Fund Details Endpoint -->
+        <!-- Fund Details Endpoint -->
+        <div class="row mt-3">
+            <div class="col-12">
                 <div class="card endpoint-card">
                     <div class="card-header">
                         <div class="endpoint-header">
@@ -90,17 +106,21 @@
                     </div>
                     <div class="card-body">
                         <h6 class="card-subtitle mb-3 text-muted">Get details for a specific fund</h6>
-                        <form id="get-fund-form">
+                        <form id="fund-details-form">
                             <div class="mb-3">
                                 <label class="form-label">ISIN</label>
                                 <input type="text" class="form-control" name="isin" value="TEST00000001">
                             </div>
-                            <button type="button" class="btn btn-primary" onclick="testEndpoint('get-fund-form', '/funds/{isin}')">Test Endpoint</button>
+                            <button type="button" class="btn btn-primary" onclick="testEndpoint('fund-details-form', '/funds/{isin}')">Test Endpoint</button>
                         </form>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Get Fund Factsheet Endpoint -->
+        <!-- Factsheet Endpoint -->
+        <div class="row mt-3">
+            <div class="col-12">
                 <div class="card endpoint-card">
                     <div class="card-header">
                         <div class="endpoint-header">
@@ -109,20 +129,22 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <h6 class="card-subtitle mb-3 text-muted">Get factsheet information for a fund</h6>
-                        <form id="get-factsheet-form">
+                        <h6 class="card-subtitle mb-3 text-muted">Get factsheet data for a fund</h6>
+                        <form id="factsheet-form">
                             <div class="mb-3">
                                 <label class="form-label">ISIN</label>
                                 <input type="text" class="form-control" name="isin" value="TEST00000001">
                             </div>
-                            <button type="button" class="btn btn-primary" onclick="testEndpoint('get-factsheet-form', '/funds/{isin}/factsheet')">Test Endpoint</button>
+                            <button type="button" class="btn btn-primary" onclick="testEndpoint('factsheet-form', '/funds/{isin}/factsheet')">Test Endpoint</button>
                         </form>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="col-md-6">
-                <!-- Get Fund Returns Endpoint -->
+        <!-- Returns Endpoint -->
+        <div class="row mt-3">
+            <div class="col-12">
                 <div class="card endpoint-card">
                     <div class="card-header">
                         <div class="endpoint-header">
@@ -131,18 +153,22 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <h6 class="card-subtitle mb-3 text-muted">Get performance metrics for a fund</h6>
-                        <form id="get-returns-form">
+                        <h6 class="card-subtitle mb-3 text-muted">Get returns data for a fund</h6>
+                        <form id="returns-form">
                             <div class="mb-3">
                                 <label class="form-label">ISIN</label>
                                 <input type="text" class="form-control" name="isin" value="TEST00000001">
                             </div>
-                            <button type="button" class="btn btn-primary" onclick="testEndpoint('get-returns-form', '/funds/{isin}/returns')">Test Endpoint</button>
+                            <button type="button" class="btn btn-primary" onclick="testEndpoint('returns-form', '/funds/{isin}/returns')">Test Endpoint</button>
                         </form>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Get Fund Holdings Endpoint -->
+        <!-- Holdings Endpoint -->
+        <div class="row mt-3">
+            <div class="col-12">
                 <div class="card endpoint-card">
                     <div class="card-header">
                         <div class="endpoint-header">
@@ -152,25 +178,31 @@
                     </div>
                     <div class="card-body">
                         <h6 class="card-subtitle mb-3 text-muted">Get portfolio holdings for a fund</h6>
-                        <form id="get-holdings-form">
-                            <div class="mb-3">
-                                <label class="form-label">ISIN</label>
-                                <input type="text" class="form-control" name="isin" value="TEST00000001">
+                        <form id="holdings-form">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">ISIN</label>
+                                    <input type="text" class="form-control" name="isin" value="TEST00000001">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Page</label>
+                                    <input type="number" class="form-control" name="page" value="1">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Per Page</label>
+                                    <input type="number" class="form-control" name="per_page" value="10">
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Sector (optional)</label>
-                                <input type="text" class="form-control" name="sector">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Type (optional)</label>
-                                <input type="text" class="form-control" name="type">
-                            </div>
-                            <button type="button" class="btn btn-primary" onclick="testEndpoint('get-holdings-form', '/funds/{isin}/holdings')">Test Endpoint</button>
+                            <button type="button" class="btn btn-primary mt-3" onclick="testEndpoint('holdings-form', '/funds/{isin}/holdings')">Test Endpoint</button>
                         </form>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Get Fund NAV History Endpoint -->
+        <!-- NAV History Endpoint -->
+        <div class="row mt-3">
+            <div class="col-12">
                 <div class="card endpoint-card">
                     <div class="card-header">
                         <div class="endpoint-header">
@@ -180,22 +212,30 @@
                     </div>
                     <div class="card-body">
                         <h6 class="card-subtitle mb-3 text-muted">Get NAV history for a fund</h6>
-                        <form id="get-nav-form">
-                            <div class="mb-3">
-                                <label class="form-label">ISIN</label>
-                                <input type="text" class="form-control" name="isin" value="TEST00000001">
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col">
-                                    <label class="form-label">Start Date (optional)</label>
+                        <form id="nav-form">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">ISIN</label>
+                                    <input type="text" class="form-control" name="isin" value="TEST00000001">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Start Date</label>
                                     <input type="date" class="form-control" name="start_date">
                                 </div>
-                                <div class="col">
-                                    <label class="form-label">End Date (optional)</label>
+                                <div class="col-md-3">
+                                    <label class="form-label">End Date</label>
                                     <input type="date" class="form-control" name="end_date">
                                 </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Page</label>
+                                    <input type="number" class="form-control" name="page" value="1">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Per Page</label>
+                                    <input type="number" class="form-control" name="per_page" value="30">
+                                </div>
                             </div>
-                            <button type="button" class="btn btn-primary" onclick="testEndpoint('get-nav-form', '/funds/{isin}/nav')">Test Endpoint</button>
+                            <button type="button" class="btn btn-primary mt-3" onclick="testEndpoint('nav-form', '/funds/{isin}/nav')">Test Endpoint</button>
                         </form>
                     </div>
                 </div>
@@ -220,6 +260,30 @@
                                 <input type="text" class="form-control" name="isin" value="TEST00000001">
                             </div>
                             <button type="button" class="btn btn-primary" onclick="testEndpoint('get-all-form', '/funds/{isin}/all')">Test Endpoint</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Complete Fund Data with Sector Analysis Endpoint -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card endpoint-card">
+                    <div class="card-header">
+                        <div class="endpoint-header">
+                            <span class="badge bg-success method-badge">GET</span>
+                            <h5 class="mb-0">/funds/{isin}/complete</h5>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">Get comprehensive fund data with portfolio, NAV history, and sector analysis</h6>
+                        <form id="get-complete-form">
+                            <div class="mb-3">
+                                <label class="form-label">ISIN</label>
+                                <input type="text" class="form-control" name="isin" value="TEST00000001">
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="testEndpoint('get-complete-form', '/funds/{isin}/complete')">Test Endpoint</button>
                         </form>
                     </div>
                 </div>
@@ -288,6 +352,13 @@
                 .catch(error => {
                     resultsArea.textContent = `Error: ${error.message}`;
                 });
+        }
+
+        function copyBaseUrl() {
+            const baseUrl = document.getElementById('base-url');
+            baseUrl.select();
+            document.execCommand('copy');
+            alert('Base URL copied to clipboard!');
         }
     </script>
 </body>
