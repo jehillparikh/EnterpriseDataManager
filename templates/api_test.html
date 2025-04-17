@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mutual Fund API Test Interface</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <style>
+        pre {
+            background-color: var(--bs-dark-bg-subtle);
+            border-radius: 5px;
+            padding: 15px;
+            overflow: auto;
+            max-height: 400px;
+        }
+        .endpoint-card {
+            margin-bottom: 20px;
+        }
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .method-badge {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container my-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">Mutual Fund API Test Interface</h1>
+                <p class="lead">Use this interface to test the Mutual Fund API endpoints.</p>
+                
+                <div class="alert alert-info">
+                    <strong>Test ISIN:</strong> TEST00000001 - Use this ISIN for testing endpoints that require an ISIN.
+                </div>
+
+                <div class="mb-5">
+                    <label for="base-url" class="form-label">API Base URL</label>
+                    <input type="text" class="form-control" id="base-url" value="/api">
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <!-- List Funds Endpoint -->
+                <div class="card endpoint-card">
+                    <div class="card-header">
+                        <div class="endpoint-header">
+                            <span class="badge bg-success method-badge">GET</span>
+                            <h5 class="mb-0">/funds</h5>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">Get all funds or filter by parameters</h6>
+                        <form id="get-funds-form">
+                            <div class="mb-3">
+                                <label class="form-label">AMC Name (optional)</label>
+                                <input type="text" class="form-control" name="amc">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Fund Type (optional)</label>
+                                <input type="text" class="form-control" name="type">
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <label class="form-label">Page</label>
+                                    <input type="number" class="form-control" name="page" value="1">
+                                </div>
+                                <div class="col">
+                                    <label class="form-label">Per Page</label>
+                                    <input type="number" class="form-control" name="per_page" value="20">
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="testEndpoint('get-funds-form', '/funds')">Test Endpoint</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Get Fund Details Endpoint -->
+                <div class="card endpoint-card">
+                    <div class="card-header">
+                        <div class="endpoint-header">
+                            <span class="badge bg-success method-badge">GET</span>
+                            <h5 class="mb-0">/funds/{isin}</h5>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">Get details for a specific fund</h6>
+                        <form id="get-fund-form">
+                            <div class="mb-3">
+                                <label class="form-label">ISIN</label>
+                                <input type="text" class="form-control" name="isin" value="TEST00000001">
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="testEndpoint('get-fund-form', '/funds/{isin}')">Test Endpoint</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Get Fund Factsheet Endpoint -->
+                <div class="card endpoint-card">
+                    <div class="card-header">
+                        <div class="endpoint-header">
+                            <span class="badge bg-success method-badge">GET</span>
+                            <h5 class="mb-0">/funds/{isin}/factsheet</h5>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">Get factsheet information for a fund</h6>
+                        <form id="get-factsheet-form">
+                            <div class="mb-3">
+                                <label class="form-label">ISIN</label>
+                                <input type="text" class="form-control" name="isin" value="TEST00000001">
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="testEndpoint('get-factsheet-form', '/funds/{isin}/factsheet')">Test Endpoint</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <!-- Get Fund Returns Endpoint -->
+                <div class="card endpoint-card">
+                    <div class="card-header">
+                        <div class="endpoint-header">
+                            <span class="badge bg-success method-badge">GET</span>
+                            <h5 class="mb-0">/funds/{isin}/returns</h5>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">Get performance metrics for a fund</h6>
+                        <form id="get-returns-form">
+                            <div class="mb-3">
+                                <label class="form-label">ISIN</label>
+                                <input type="text" class="form-control" name="isin" value="TEST00000001">
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="testEndpoint('get-returns-form', '/funds/{isin}/returns')">Test Endpoint</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Get Fund Holdings Endpoint -->
+                <div class="card endpoint-card">
+                    <div class="card-header">
+                        <div class="endpoint-header">
+                            <span class="badge bg-success method-badge">GET</span>
+                            <h5 class="mb-0">/funds/{isin}/holdings</h5>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">Get portfolio holdings for a fund</h6>
+                        <form id="get-holdings-form">
+                            <div class="mb-3">
+                                <label class="form-label">ISIN</label>
+                                <input type="text" class="form-control" name="isin" value="TEST00000001">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Sector (optional)</label>
+                                <input type="text" class="form-control" name="sector">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Type (optional)</label>
+                                <input type="text" class="form-control" name="type">
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="testEndpoint('get-holdings-form', '/funds/{isin}/holdings')">Test Endpoint</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Get Fund NAV History Endpoint -->
+                <div class="card endpoint-card">
+                    <div class="card-header">
+                        <div class="endpoint-header">
+                            <span class="badge bg-success method-badge">GET</span>
+                            <h5 class="mb-0">/funds/{isin}/nav</h5>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">Get NAV history for a fund</h6>
+                        <form id="get-nav-form">
+                            <div class="mb-3">
+                                <label class="form-label">ISIN</label>
+                                <input type="text" class="form-control" name="isin" value="TEST00000001">
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <label class="form-label">Start Date (optional)</label>
+                                    <input type="date" class="form-control" name="start_date">
+                                </div>
+                                <div class="col">
+                                    <label class="form-label">End Date (optional)</label>
+                                    <input type="date" class="form-control" name="end_date">
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="testEndpoint('get-nav-form', '/funds/{isin}/nav')">Test Endpoint</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- All Fund Data Endpoint -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card endpoint-card">
+                    <div class="card-header">
+                        <div class="endpoint-header">
+                            <span class="badge bg-success method-badge">GET</span>
+                            <h5 class="mb-0">/funds/{isin}/all</h5>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">Get all data for a fund in a single request</h6>
+                        <form id="get-all-form">
+                            <div class="mb-3">
+                                <label class="form-label">ISIN</label>
+                                <input type="text" class="form-control" name="isin" value="TEST00000001">
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="testEndpoint('get-all-form', '/funds/{isin}/all')">Test Endpoint</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">API Response</h5>
+                    </div>
+                    <div class="card-body">
+                        <pre id="api-results">No results yet. Test an endpoint to see the response.</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function testEndpoint(formId, endpointTemplate) {
+            const form = document.getElementById(formId);
+            const formData = new FormData(form);
+            const params = {};
+            let endpoint = endpointTemplate;
+
+            // Process form data
+            for (const [key, value] of formData.entries()) {
+                if (value) {
+                    if (endpoint.includes(`{${key}}`)) {
+                        endpoint = endpoint.replace(`{${key}}`, value);
+                    } else {
+                        params[key] = value;
+                    }
+                }
+            }
+
+            // Build query string for GET parameters
+            const queryString = Object.keys(params).length 
+                ? '?' + new URLSearchParams(params).toString() 
+                : '';
+            
+            // Get base URL
+            const baseUrl = document.getElementById('base-url').value.trim();
+            
+            // Full URL
+            const url = `${baseUrl}${endpoint}${queryString}`;
+            
+            // Update results area with loading message
+            const resultsArea = document.getElementById('api-results');
+            resultsArea.textContent = 'Fetching results...';
+            
+            // Make the API call
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    resultsArea.textContent = JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    resultsArea.textContent = `Error: ${error.message}`;
+                });
+        }
+    </script>
+</body>
+</html>
