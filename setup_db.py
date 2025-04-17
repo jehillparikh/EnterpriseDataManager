@@ -1,9 +1,9 @@
 import os
 import logging
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import MetaData
+from sqlalchemy.orm import DeclarativeBase, registry
+from flask_sqlalchemy import SQLAlchemy
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -18,9 +18,13 @@ convention = {
     "pk": "pk_%(table_name)s"
 }
 
-# Create SQLAlchemy base class with naming convention
+# Create base metadata with naming convention
+metadata = MetaData(naming_convention=convention)
+mapper_registry = registry(metadata=metadata)
+
+# Create SQLAlchemy base class
 class Base(DeclarativeBase):
-    metadata = MetaData(naming_convention=convention)
+    metadata = metadata
 
 # Create SQLAlchemy extension
 db = SQLAlchemy(model_class=Base)
@@ -39,29 +43,7 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
-    # Configure JWT secret key
-    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-secret-key')
-    
     # Initialize database
     db.init_app(app)
     
-    # Create database tables
-    with app.app_context():
-        # Import the models here to avoid circular imports
-        from new_models import Fund, FundFactSheet, FundReturns, PortfolioHolding, NavHistory
-        db.create_all()
-        logger.info("Database tables created successfully")
-    
-    # Register API routes
-    from new_api import setup_routes
-    setup_routes(app)
-    logger.info("API routes registered successfully")
-    
     return app
-
-# Create Flask application
-app = create_app()
-
-if __name__ == '__main__':
-    # Run the Flask application
-    app.run(host='0.0.0.0', port=5000, debug=True)
