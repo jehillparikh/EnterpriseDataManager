@@ -41,18 +41,18 @@ def create_app():
     app = Flask(__name__)
     
     # Configure database
-    database_url = os.environ.get('DATABASE_URL')
-    if not database_url:
-        logger.error("DATABASE_URL environment variable not set!")
+    database_uri = os.environ.get('SQLALCHEMY_DATABASE_URI')
+    if not database_uri:
+        logger.error("SQLALCHEMY_DATABASE_URI environment variable not set!")
         logger.warning("Using fallback connection string for development only")
         # For local development only, should never be used in production
-        database_url = "postgresql://userdatabase_740c_user:VswYN2reYmzvjgZ5QMkNugBPxYvzTe08@dpg-cvn3uaemcj7s73c3a8vg-a.singapore-postgres.render.com/userdatabase_740c"
+        database_uri = "postgresql://userdatabase_740c_user:VswYN2reYmzvjgZ5QMkNugBPxYvzTe08@dpg-cvn3uaemcj7s73c3a8vg-a.singapore-postgres.render.com/userdatabase_740c"
     
     # Set this in the environment in case any other modules need it
-    os.environ['DATABASE_URL'] = database_url
+    os.environ['SQLALCHEMY_DATABASE_URI'] = database_uri
     
     # Configure SQLAlchemy - this is what Flask-SQLAlchemy looks for
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         "pool_recycle": 300,

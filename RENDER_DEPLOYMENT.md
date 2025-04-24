@@ -38,7 +38,7 @@ If you prefer to set up environment variables manually:
    - Start Command: `gunicorn --bind 0.0.0.0:$PORT --reuse-port main:app`
 
 5. Add the following environment variables:
-   - `DATABASE_URL`: Your PostgreSQL connection string
+   - `SQLALCHEMY_DATABASE_URI`: Your PostgreSQL connection string
    - `PYTHON_VERSION`: 3.11.1
    - `POETRY_VIRTUALENVS_CREATE`: false
 
@@ -56,7 +56,7 @@ Once deployed, you can check if your API is working by visiting:
 
 If you encounter the error "Either 'SQLALCHEMY_DATABASE_URI' or 'SQLALCHEMY_BINDS' must be set":
 
-1. Make sure the `DATABASE_URL` environment variable is set in the Render dashboard
+1. Make sure the `SQLALCHEMY_DATABASE_URI` environment variable is set in the Render dashboard
 2. Check if the application can access the environment variable
 3. Verify that your database is accessible from Render.com
 
