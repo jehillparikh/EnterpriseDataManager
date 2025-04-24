@@ -25,6 +25,7 @@ def check_tables():
         
         # Check if any required new tables exist
         required_tables = ['mf_fund', 'mf_factsheet', 'mf_returns', 'mf_portfolio_holdings', 'mf_nav_history']
+        logger.info(f"Required tables: {required_tables}")
         for table in required_tables:
             if table in tables:
                 logger.info(f"Table {table} exists")
