@@ -1,17 +1,19 @@
+"""
+Configuration settings for the Mutual Fund API application
+"""
 import os
 
 # Database configuration
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-# Secret key for JWT
-JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-here')
-JWT_EXPIRY_HOURS = 24 * 30  # 30 days
+# Application configuration
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 't')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'mutual-fund-api-secret-key')
 
-# Hyperverge API Configuration
-HYPERVERGE_APP_ID = os.environ.get('HYPERVERGE_APP_ID', '')
-HYPERVERGE_APP_KEY = os.environ.get('HYPERVERGE_APP_KEY', '')
-HYPERVERGE_BASE_URL = 'https://ind-docs.hyperverge.co/v2.0'
+# API configuration
+API_VERSION = '1.0.0'
+API_BASE_URL = '/api'
 
-# BSE Star API Configuration
-BSE_STAR_API_KEY = os.environ.get('BSE_STAR_API_KEY', '')
-BSE_STAR_BASE_URL = 'https://www.bsestarmf.in/RptApi/api'
+# Server configuration
+HOST = '0.0.0.0'
+PORT = int(os.environ.get('PORT', 5000))

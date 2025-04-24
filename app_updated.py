@@ -3,6 +3,7 @@ import logging
 from flask import render_template, send_file, Response
 from setup_db import create_app, db
 from fund_api import init_fund_api
+import config
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -59,4 +60,4 @@ def readme_content():
 
 if __name__ == '__main__':
     # Run the Flask application
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)
