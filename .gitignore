@@ -21,7 +21,7 @@ wheels/
 *.egg
 
 # Environments
-# .env  # Explicitly allowing .env to be committed for Render.com deployment
+# .env  
 .venv
 env/
 venv/
