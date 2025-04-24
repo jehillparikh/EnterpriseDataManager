@@ -33,12 +33,20 @@ class FundDataImporter:
         self.app_context = self.app.app_context()
         self.app_context.push()
         
-        # Define file paths
-        self.excel_dir = 'attached_assets'
+        # Define file paths - use absolute paths to ensure we find the files
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.excel_dir = os.path.join(root_dir, 'attached_assets')
         self.factsheet_file = os.path.join(self.excel_dir, 'factsheet_testdata.xlsx')
         self.returns_file = os.path.join(self.excel_dir, 'returns_testdata.xlsx')
         self.portfolio_file = os.path.join(self.excel_dir, 'mutual_portfolio_testdata.xlsx')
         self.nav_file = os.path.join(self.excel_dir, 'navtimeseries_testdata.xlsx')
+        
+        # Log the file paths
+        logger.info(f"Excel directory: {self.excel_dir}")
+        logger.info(f"Factsheet file: {self.factsheet_file}")
+        logger.info(f"Returns file: {self.returns_file}")
+        logger.info(f"Portfolio file: {self.portfolio_file}")
+        logger.info(f"NAV file: {self.nav_file}")
         
     def __del__(self):
         """Clean up resources when the object is destroyed"""
