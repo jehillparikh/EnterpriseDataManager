@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import render_template
+from flask import render_template, send_file, Response
 from setup_db import create_app, db
 from fund_api import init_fund_api
 
@@ -40,6 +40,22 @@ app = init_app()
 def index():
     """Homepage route"""
     return render_template('api_test.html')
+
+@app.route('/docs')
+def documentation():
+    """Documentation page route"""
+    return render_template('docs.html')
+
+@app.route('/readme-content')
+def readme_content():
+    """Serve the README.md content"""
+    try:
+        with open('README.md', 'r') as file:
+            content = file.read()
+        return Response(content, mimetype='text/plain')
+    except Exception as e:
+        logger.error(f"Error reading README.md: {e}")
+        return Response("# Error\nCould not load API documentation.", mimetype='text/plain')
 
 if __name__ == '__main__':
     # Run the Flask application
