@@ -1,67 +1,63 @@
 import os
 import logging
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import MetaData
+from flask import Flask, render_template, send_file, Response
+from setup_db import create_app, db
+from fund_api import init_fund_api
+import config
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Define naming convention for constraints to help with migrations
-convention = {
-    "ix": "ix_%(column_0_label)s",
-    "uq": "uq_%(table_name)s_%(column_0_name)s",
-    "ck": "ck_%(table_name)s_%(constraint_name)s",
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-    "pk": "pk_%(table_name)s"
-}
-
-# Create SQLAlchemy base class with naming convention
-class Base(DeclarativeBase):
-    metadata = MetaData(naming_convention=convention)
-
-# Create SQLAlchemy extension
-db = SQLAlchemy(model_class=Base)
-
-def create_app():
-    """
-    Create Flask application
-    
-    Returns:
-        Flask: The configured Flask application
-    """
+def init_app():
+    """Initialize the Flask application with our components"""
     # Create Flask application
-    app = Flask(__name__)
-    
-    # Configure database
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
-    # Configure JWT secret key
-    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-secret-key')
-    
-    # Initialize database
-    db.init_app(app)
+    app = create_app()
     
     # Create database tables
     with app.app_context():
-        # Import the models here to avoid circular imports
-        from new_models import Fund, FundFactSheet, FundReturns, PortfolioHolding, NavHistory
-        db.create_all()
-        logger.info("Database tables created successfully")
+        # Import models after app context is established
+        from new_models_updated import Fund, FundFactSheet, FundReturns, PortfolioHolding, NavHistory
+        
+        # Instead of dropping tables, we'll try to create them if they don't exist
+        # This allows us to work with existing tables that might have dependencies
+        try:
+            db.create_all()
+            logger.info("Database tables created successfully")
+        except Exception as e:
+            logger.error(f"Error creating tables: {e}")
+            # If there's an error, we'll attempt to handle it without dropping tables
     
     # Register API routes
-    from new_api import setup_routes
-    setup_routes(app)
+    app = init_fund_api(app)
     logger.info("API routes registered successfully")
     
     return app
 
 # Create Flask application
-app = create_app()
+app = init_app()
+
+@app.route('/')
+def index():
+    """Homepage route"""
+    return render_template('api_test.html')
+
+@app.route('/docs')
+def documentation():
+    """Documentation page route"""
+    return render_template('docs.html')
+
+@app.route('/readme-content')
+def readme_content():
+    """Serve the README.md content"""
+    try:
+        with open('README.md', 'r') as file:
+            content = file.read()
+        return Response(content, mimetype='text/plain')
+    except Exception as e:
+        logger.error(f"Error reading README.md: {e}")
+        return Response("# Error\nCould not load API documentation.", mimetype='text/plain')
 
 if __name__ == '__main__':
     # Run the Flask application
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)
