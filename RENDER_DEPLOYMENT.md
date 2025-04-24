@@ -9,6 +9,25 @@ This guide explains how to deploy the Mutual Fund API to Render.com.
 
 ## Steps for Deployment
 
+### Option 1: Using the .env File (Recommended)
+
+1. Log in to your Render.com account
+2. Click on "New" and select "Web Service"
+3. Connect your repository (GitHub, GitLab, etc.)
+4. Use the following settings:
+   - Name: mutual-fund-api (or your preferred name)
+   - Environment: Python
+   - Build Command: `curl -sSL https://install.python-poetry.org | python3 - && $HOME/.local/bin/poetry install --no-interaction --no-ansi`
+   - Start Command: `gunicorn --bind 0.0.0.0:$PORT --reuse-port main:app`
+
+5. Click "Create Web Service"
+
+The application includes a `.env` file that Render will automatically detect and use for environment variables.
+
+### Option 2: Manual Environment Variable Setup
+
+If you prefer to set up environment variables manually:
+
 1. Log in to your Render.com account
 2. Click on "New" and select "Web Service"
 3. Connect your repository (GitHub, GitLab, etc.)

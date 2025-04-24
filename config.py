@@ -2,6 +2,10 @@
 Configuration settings for the Mutual Fund API application
 """
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Database configuration
 DATABASE_URL = os.environ.get('DATABASE_URL')
