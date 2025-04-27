@@ -408,7 +408,7 @@ def get_fund_complete(isin):
                         sector_map[holding.sector] = holding.percentage_to_nav
                 
                 # Track asset class allocation
-                if holding.instrument_type == 'Equity':
+                if holding.instrument_type == 'Equity or related':
                     equity_allocation += holding.percentage_to_nav
                 elif holding.instrument_type == 'Debt':
                     debt_allocation += holding.percentage_to_nav
