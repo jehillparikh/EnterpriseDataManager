@@ -3,6 +3,7 @@ import logging
 from flask import Flask, render_template, send_file, Response
 from setup_db import create_app, db
 from fund_api import init_fund_api
+from upload_handler import init_upload_routes
 import config
 
 # Configure logging
@@ -31,6 +32,10 @@ def init_app():
     # Register API routes
     app = init_fund_api(app)
     logger.info("API routes registered successfully")
+    
+    # Register upload routes
+    init_upload_routes(app)
+    logger.info("Upload routes registered successfully")
     
     return app
 
