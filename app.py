@@ -3,7 +3,7 @@ import logging
 from flask import Flask, render_template, send_file, Response
 from setup_db import create_app, db
 from fund_api import init_fund_api
-from upload_handler import init_upload_routes
+from temp_upload_handler import init_upload_routes
 import config
 
 # Configure logging

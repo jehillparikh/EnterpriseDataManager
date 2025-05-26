@@ -1,6 +1,6 @@
 import os
-import tempfile
 import logging
+import shutil
 from flask import Blueprint, request, jsonify, render_template
 from werkzeug.utils import secure_filename
 from data.fund_data_importer import FundDataImporter
@@ -13,6 +13,12 @@ upload_bp = Blueprint('upload', __name__)
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
+
+# Temp upload directory
+TEMP_UPLOAD_DIR = 'temp_uploads'
+
+# Ensure temp directory exists
+os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
@@ -27,23 +33,38 @@ def upload_page():
 
 @upload_bp.route('/api/upload/factsheet', methods=['POST'])
 def upload_factsheet():
-    """Upload and import factsheet data"""
-    return handle_upload('factsheet', 'factsheet_data.xlsx')
+    """Upload factsheet file to temp storage"""
+    return store_file('factsheet', 'factsheet_data.xlsx')
 
 @upload_bp.route('/api/upload/returns', methods=['POST'])
 def upload_returns():
-    """Upload and import returns data"""
-    return handle_upload('returns', 'returns_data.xlsx')
+    """Upload returns file to temp storage"""
+    return store_file('returns', 'returns_data.xlsx')
 
 @upload_bp.route('/api/upload/portfolio', methods=['POST'])
 def upload_portfolio():
-    """Upload and import portfolio holdings data"""
-    return handle_upload('portfolio', 'portfolio_data.xlsx')
+    """Upload portfolio file to temp storage"""
+    return store_file('portfolio', 'portfolio_data.xlsx')
 
 @upload_bp.route('/api/upload/nav', methods=['POST'])
 def upload_nav():
-    """Upload and import NAV history data"""
-    return handle_upload('nav', 'nav_data.xlsx')
+    """Upload NAV file to temp storage"""
+    return store_file('nav', 'nav_data.xlsx')
+
+@upload_bp.route('/api/upload/submit', methods=['POST'])
+def submit_to_database():
+    """Process all uploaded files and import to database"""
+    return process_all_files()
+
+@upload_bp.route('/api/upload/status', methods=['GET'])
+def upload_status():
+    """Check status of uploaded files"""
+    return get_upload_status()
+
+@upload_bp.route('/api/upload/clear', methods=['POST'])
+def clear_uploads():
+    """Clear all uploaded files"""
+    return clear_temp_files()
 
 def handle_upload(data_type, temp_filename):
     """Handle file upload and data import"""
