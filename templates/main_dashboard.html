@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mutual Fund API Dashboard</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <style>
+        .upload-section {
+            border: 2px dashed var(--bs-border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            transition: border-color 0.3s ease;
+        }
+        .upload-section:hover {
+            border-color: var(--bs-primary);
+        }
+        .file-input {
+            display: none;
+        }
+        .upload-btn {
+            margin-top: 1rem;
+        }
+        .progress {
+            display: none;
+            margin-top: 1rem;
+        }
+        .result {
+            margin-top: 1rem;
+            display: none;
+        }
+        .file-info {
+            margin-top: 1rem;
+            display: none;
+        }
+        .api-endpoint {
+            background: var(--bs-dark);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .method-badge {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+        .method-get { background-color: var(--bs-success); color: white; }
+        .method-post { background-color: var(--bs-primary); color: white; }
+        .method-put { background-color: var(--bs-warning); color: black; }
+        .method-delete { background-color: var(--bs-danger); color: white; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+                    <div class="container">
+                        <a class="navbar-brand" href="/">
+                            <strong>Mutual Fund API</strong>
+                        </a>
+                        <span class="navbar-text">
+                            Enterprise Financial Services Platform
+                        </span>
+                    </div>
+                </nav>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="api-tab" data-bs-toggle="tab" data-bs-target="#api-panel" type="button" role="tab">
+                        API Testing
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-panel" type="button" role="tab">
+                        Data Upload
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="mainTabContent">
+                <!-- API Testing Tab -->
+                <div class="tab-pane fade show active" id="api-panel" role="tabpanel">
+                    <div class="row">
+                        <div class="col-12">
+                            <h2>API Testing Interface</h2>
+                            <p class="lead">Test the mutual fund API endpoints directly from this interface.</p>
+                        </div>
+                    </div>
+
+                    <!-- Fund Endpoints -->
+                    <div class="api-endpoint">
+                        <h4>Fund Information</h4>
+                        <div class="mb-3">
+                            <span class="method-badge method-get">GET</span>
+                            <code>/api/funds</code>
+                            <p class="mt-2 mb-2">Get all funds with optional filtering by AMC or fund type.</p>
+                            <button class="btn btn-outline-primary btn-sm" onclick="testEndpoint('/api/funds', 'funds-result')">Test</button>
+                            <div id="funds-result" class="mt-2"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <span class="method-badge method-get">GET</span>
+                            <code>/api/funds/{isin}</code>
+                            <p class="mt-2 mb-2">Get specific fund details by ISIN.</p>
+                            <div class="input-group input-group-sm mb-2">
+                                <input type="text" class="form-control" id="fund-isin" placeholder="Enter ISIN (e.g., INF179K01830)">
+                                <button class="btn btn-outline-primary" onclick="testFundEndpoint()">Test</button>
+                            </div>
+                            <div id="fund-result" class="mt-2"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <span class="method-badge method-get">GET</span>
+                            <code>/api/funds/{isin}/complete</code>
+                            <p class="mt-2 mb-2">Get comprehensive fund data including factsheet, returns, NAV, and sector analysis.</p>
+                            <div class="input-group input-group-sm mb-2">
+                                <input type="text" class="form-control" id="complete-isin" placeholder="Enter ISIN">
+                                <button class="btn btn-outline-primary" onclick="testCompleteEndpoint()">Test</button>
+                            </div>
+                            <div id="complete-result" class="mt-2"></div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Endpoints -->
+                    <div class="api-endpoint">
+                        <h4>Fund Data Components</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <span class="method-badge method-get">GET</span>
+                                    <code>/api/funds/{isin}/factsheet</code>
+                                    <p class="mt-2">Fund factsheet data</p>
+                                </div>
+                                <div class="mb-3">
+                                    <span class="method-badge method-get">GET</span>
+                                    <code>/api/funds/{isin}/returns</code>
+                                    <p class="mt-2">Fund performance returns</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <span class="method-badge method-get">GET</span>
+                                    <code>/api/funds/{isin}/holdings</code>
+                                    <p class="mt-2">Portfolio holdings</p>
+                                </div>
+                                <div class="mb-3">
+                                    <span class="method-badge method-get">GET</span>
+                                    <code>/api/funds/{isin}/nav</code>
+                                    <p class="mt-2">NAV history</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Response Display -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>API Response</h5>
+                                </div>
+                                <div class="card-body">
+                                    <pre id="api-response" class="mb-0" style="max-height: 400px; overflow-y: auto;">
+Select an endpoint above to see the API response...
+                                    </pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Upload Tab -->
+                <div class="tab-pane fade" id="upload-panel" role="tabpanel">
+                    <div class="row">
+                        <div class="col-12">
+                            <h2>Fund Data Upload</h2>
+                            <p class="lead">Upload Excel files to import mutual fund data into the database.</p>
+                        </div>
+                    </div>
+
+                    <!-- Factsheet Upload -->
+                    <div class="upload-section" id="factsheet-section">
+                        <h3>Factsheet Data</h3>
+                        <p>Upload Excel file containing fund basic information and factsheet data.</p>
+                        <input type="file" id="factsheet-file" class="file-input" accept=".xlsx,.xls">
+                        <button class="btn btn-outline-primary" onclick="document.getElementById('factsheet-file').click()">
+                            Choose Factsheet File
+                        </button>
+                        <div class="file-info" id="factsheet-info"></div>
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" id="factsheet-clear">
+                            <label class="form-check-label" for="factsheet-clear">
+                                Clear existing factsheet data before import
+                            </label>
+                        </div>
+                        <button class="btn btn-primary upload-btn" id="factsheet-upload" disabled onclick="uploadFile('factsheet')">
+                            Upload Factsheet Data
+                        </button>
+                        <div class="progress" id="factsheet-progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                        </div>
+                        <div class="result" id="factsheet-result"></div>
+                    </div>
+
+                    <!-- Returns Upload -->
+                    <div class="upload-section" id="returns-section">
+                        <h3>Returns Data</h3>
+                        <p>Upload Excel file containing fund performance and returns data.</p>
+                        <input type="file" id="returns-file" class="file-input" accept=".xlsx,.xls">
+                        <button class="btn btn-outline-primary" onclick="document.getElementById('returns-file').click()">
+                            Choose Returns File
+                        </button>
+                        <div class="file-info" id="returns-info"></div>
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" id="returns-clear">
+                            <label class="form-check-label" for="returns-clear">
+                                Clear existing returns data before import
+                            </label>
+                        </div>
+                        <button class="btn btn-primary upload-btn" id="returns-upload" disabled onclick="uploadFile('returns')">
+                            Upload Returns Data
+                        </button>
+                        <div class="progress" id="returns-progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                        </div>
+                        <div class="result" id="returns-result"></div>
+                    </div>
+
+                    <!-- Portfolio Upload -->
+                    <div class="upload-section" id="portfolio-section">
+                        <h3>Portfolio Holdings Data</h3>
+                        <p>Upload Excel file containing fund portfolio holdings and asset allocation data.</p>
+                        <input type="file" id="portfolio-file" class="file-input" accept=".xlsx,.xls">
+                        <button class="btn btn-outline-primary" onclick="document.getElementById('portfolio-file').click()">
+                            Choose Portfolio File
+                        </button>
+                        <div class="file-info" id="portfolio-info"></div>
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" id="portfolio-clear">
+                            <label class="form-check-label" for="portfolio-clear">
+                                Clear existing portfolio data before import
+                            </label>
+                        </div>
+                        <button class="btn btn-primary upload-btn" id="portfolio-upload" disabled onclick="uploadFile('portfolio')">
+                            Upload Portfolio Data
+                        </button>
+                        <div class="progress" id="portfolio-progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                        </div>
+                        <div class="result" id="portfolio-result"></div>
+                    </div>
+
+                    <!-- NAV Upload -->
+                    <div class="upload-section" id="nav-section">
+                        <h3>NAV History Data</h3>
+                        <p>Upload Excel file containing NAV history and time series data.</p>
+                        <input type="file" id="nav-file" class="file-input" accept=".xlsx,.xls">
+                        <button class="btn btn-outline-primary" onclick="document.getElementById('nav-file').click()">
+                            Choose NAV File
+                        </button>
+                        <div class="file-info" id="nav-info"></div>
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" id="nav-clear">
+                            <label class="form-check-label" for="nav-clear">
+                                Clear existing NAV data before import
+                            </label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nav-batch-size" class="form-label">Batch Size (for large files)</label>
+                            <input type="number" class="form-control" id="nav-batch-size" value="1000" min="100" max="10000">
+                        </div>
+                        <button class="btn btn-primary upload-btn" id="nav-upload" disabled onclick="uploadFile('nav')">
+                            Upload NAV Data
+                        </button>
+                        <div class="progress" id="nav-progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                        </div>
+                        <div class="result" id="nav-result"></div>
+                    </div>
+
+                    <div class="alert alert-info mt-4">
+                        <h5>Upload Instructions:</h5>
+                        <ul class="mb-0">
+                            <li>Upload files in order: Factsheet → Returns → Portfolio → NAV</li>
+                            <li>Factsheet data must be uploaded first as it creates the base fund records</li>
+                            <li>Only Excel files (.xlsx, .xls) are supported</li>
+                            <li>Files are temporarily stored and automatically deleted after processing</li>
+                            <li>Large NAV files may take several minutes to process</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // API Testing Functions
+        function testEndpoint(endpoint, resultId) {
+            fetch(endpoint)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('api-response').textContent = JSON.stringify(data, null, 2);
+                    document.getElementById(resultId).innerHTML = `<small class="text-success">✓ Response received</small>`;
+                })
+                .catch(error => {
+                    document.getElementById('api-response').textContent = `Error: ${error.message}`;
+                    document.getElementById(resultId).innerHTML = `<small class="text-danger">✗ Error occurred</small>`;
+                });
+        }
+
+        function testFundEndpoint() {
+            const isin = document.getElementById('fund-isin').value.trim();
+            if (!isin) {
+                alert('Please enter an ISIN');
+                return;
+            }
+            testEndpoint(`/api/funds/${isin}`, 'fund-result');
+        }
+
+        function testCompleteEndpoint() {
+            const isin = document.getElementById('complete-isin').value.trim();
+            if (!isin) {
+                alert('Please enter an ISIN');
+                return;
+            }
+            testEndpoint(`/api/funds/${isin}/complete`, 'complete-result');
+        }
+
+        // File Upload Functions
+        document.getElementById('factsheet-file').addEventListener('change', function(e) {
+            handleFileSelect(e, 'factsheet');
+        });
+
+        document.getElementById('returns-file').addEventListener('change', function(e) {
+            handleFileSelect(e, 'returns');
+        });
+
+        document.getElementById('portfolio-file').addEventListener('change', function(e) {
+            handleFileSelect(e, 'portfolio');
+        });
+
+        document.getElementById('nav-file').addEventListener('change', function(e) {
+            handleFileSelect(e, 'nav');
+        });
+
+        function handleFileSelect(event, type) {
+            const file = event.target.files[0];
+            const infoDiv = document.getElementById(type + '-info');
+            const uploadBtn = document.getElementById(type + '-upload');
+
+            if (file) {
+                infoDiv.innerHTML = `
+                    <div class="alert alert-secondary">
+                        <strong>Selected:</strong> ${file.name}<br>
+                        <strong>Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB
+                    </div>
+                `;
+                infoDiv.style.display = 'block';
+                uploadBtn.disabled = false;
+            } else {
+                infoDiv.style.display = 'none';
+                uploadBtn.disabled = true;
+            }
+        }
+
+        function uploadFile(type) {
+            const fileInput = document.getElementById(type + '-file');
+            const clearCheckbox = document.getElementById(type + '-clear');
+            const progressDiv = document.getElementById(type + '-progress');
+            const resultDiv = document.getElementById(type + '-result');
+            const uploadBtn = document.getElementById(type + '-upload');
+
+            if (!fileInput.files[0]) {
+                alert('Please select a file first');
+                return;
+            }
+
+            // Show progress bar and disable button
+            progressDiv.style.display = 'block';
+            resultDiv.style.display = 'none';
+            uploadBtn.disabled = true;
+
+            // Create FormData
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('clear_existing', clearCheckbox.checked);
+
+            // Add batch size for NAV uploads
+            if (type === 'nav') {
+                const batchSize = document.getElementById('nav-batch-size').value;
+                formData.append('batch_size', batchSize);
+            }
+
+            // Make API call
+            fetch(`/api/upload/${type}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                progressDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+                uploadBtn.disabled = false;
+
+                if (data.error) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.error}
+                        </div>
+                    `;
+                } else {
+                    let statsHtml = '';
+                    if (data.stats) {
+                        statsHtml = '<ul class="mb-0">';
+                        for (const [key, value] of Object.entries(data.stats)) {
+                            statsHtml += `<li>${key.replace(/_/g, ' ')}: ${value}</li>`;
+                        }
+                        statsHtml += '</ul>';
+                    }
+
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>Success:</strong> ${data.message}
+                            ${statsHtml ? '<br><strong>Statistics:</strong>' + statsHtml : ''}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                progressDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+                uploadBtn.disabled = false;
+
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> ${error.message || 'Upload failed'}
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>

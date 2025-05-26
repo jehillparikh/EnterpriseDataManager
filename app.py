@@ -45,7 +45,7 @@ app = init_app()
 @app.route('/')
 def index():
     """Homepage route"""
-    return render_template('api_test.html')
+    return render_template('main_dashboard.html')
 
 @app.route('/docs')
 def documentation():
