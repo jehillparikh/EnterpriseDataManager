@@ -364,6 +364,11 @@ Select an endpoint above to see the API response...
             testEndpoint(`/api/funds/${isin}/complete`, 'complete-result');
         }
 
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshStatus();
+        });
+
         // File Upload Functions
         document.getElementById('factsheet-file').addEventListener('change', function(e) {
             handleFileSelect(e, 'factsheet');
@@ -447,21 +452,14 @@ Select an endpoint above to see the API response...
                         </div>
                     `;
                 } else {
-                    let statsHtml = '';
-                    if (data.stats) {
-                        statsHtml = '<ul class="mb-0">';
-                        for (const [key, value] of Object.entries(data.stats)) {
-                            statsHtml += `<li>${key.replace(/_/g, ' ')}: ${value}</li>`;
-                        }
-                        statsHtml += '</ul>';
-                    }
-
                     resultDiv.innerHTML = `
                         <div class="alert alert-success">
                             <strong>Success:</strong> ${data.message}
-                            ${statsHtml ? '<br><strong>Statistics:</strong>' + statsHtml : ''}
+                            <br><small>File: ${data.filename} (${data.size})</small>
                         </div>
                     `;
+                    // Refresh status after successful upload
+                    refreshStatus();
                 }
             })
             .catch(error => {
@@ -475,6 +473,142 @@ Select an endpoint above to see the API response...
                     </div>
                 `;
             });
+        }
+
+        // Status and Submit Functions
+        function refreshStatus() {
+            fetch('/api/upload/status')
+                .then(response => response.json())
+                .then(data => {
+                    updateStatusDisplay(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching status:', error);
+                });
+        }
+
+        function updateStatusDisplay(data) {
+            const statusDiv = document.getElementById('upload-status');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            let statusHtml = '';
+            
+            for (const [type, info] of Object.entries(data.files)) {
+                const statusIcon = info.uploaded ? '✅' : '⭕';
+                const statusText = info.uploaded ? `Uploaded (${info.size})` : 'Not uploaded';
+                
+                statusHtml += `
+                    <div class="col-md-3 mb-2">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">${statusIcon} ${type.charAt(0).toUpperCase() + type.slice(1)}</h6>
+                                <small class="text-muted">${statusText}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            statusDiv.innerHTML = statusHtml;
+            submitBtn.disabled = !data.ready_to_submit;
+        }
+
+        function submitToDatabase() {
+            const submitBtn = document.getElementById('submit-btn');
+            const submitProgress = document.getElementById('submit-progress');
+            const submitResult = document.getElementById('submit-result');
+            
+            // Show progress
+            submitBtn.disabled = true;
+            submitProgress.style.display = 'block';
+            submitResult.innerHTML = '';
+            
+            // Get form options
+            const formData = new FormData();
+            formData.append('clear_existing', 'false'); // You can add checkboxes for this later
+            formData.append('batch_size', document.getElementById('nav-batch-size').value || '1000');
+            
+            // Submit to database
+            fetch('/api/upload/submit', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                submitProgress.style.display = 'none';
+                submitBtn.disabled = false;
+                
+                if (data.error) {
+                    submitResult.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.error}
+                        </div>
+                    `;
+                } else {
+                    let resultsHtml = '<div class="alert alert-success"><strong>Success:</strong> ' + data.message + '</div>';
+                    
+                    if (data.results) {
+                        resultsHtml += '<div class="mt-3"><h6>Import Statistics:</h6>';
+                        for (const [type, stats] of Object.entries(data.results)) {
+                            resultsHtml += `<div class="card mb-2">
+                                <div class="card-body">
+                                    <h6 class="card-title">${type.charAt(0).toUpperCase() + type.slice(1)} Data</h6>
+                                    <ul class="mb-0">`;
+                            
+                            if (typeof stats === 'object') {
+                                for (const [key, value] of Object.entries(stats)) {
+                                    resultsHtml += `<li>${key.replace(/_/g, ' ')}: ${value}</li>`;
+                                }
+                            } else {
+                                resultsHtml += `<li>Status: ${stats}</li>`;
+                            }
+                            
+                            resultsHtml += '</ul></div></div>';
+                        }
+                        resultsHtml += '</div>';
+                    }
+                    
+                    submitResult.innerHTML = resultsHtml;
+                }
+            })
+            .catch(error => {
+                submitProgress.style.display = 'none';
+                submitBtn.disabled = false;
+                
+                submitResult.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> ${error.message || 'Submit failed'}
+                    </div>
+                `;
+            });
+        }
+
+        function clearAllFiles() {
+            if (confirm('Are you sure you want to clear all uploaded files?')) {
+                fetch('/api/upload/clear', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                    } else {
+                        alert('All files cleared successfully');
+                        refreshStatus();
+                        // Clear all result divs
+                        ['factsheet', 'returns', 'portfolio', 'nav'].forEach(type => {
+                            document.getElementById(type + '-result').innerHTML = '';
+                            document.getElementById(type + '-file').value = '';
+                            document.getElementById(type + '-info').style.display = 'none';
+                            document.getElementById(type + '-upload').disabled = true;
+                        });
+                        document.getElementById('submit-result').innerHTML = '';
+                    }
+                })
+                .catch(error => {
+                    alert('Error clearing files: ' + error.message);
+                });
+            }
         }
     </script>
 </body>
