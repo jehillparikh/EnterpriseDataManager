@@ -125,8 +125,8 @@ class FundDataImporter:
                 fund_type = row['Type']
                 fund_subtype = row['Subtype']
                 
-                # Extract AMC name from scheme name (assume first word is AMC)
-                amc_name = scheme_name.split(' ')[0]
+                # Extract AMC name from scheme name (first word is typically the AMC)
+                amc_name = scheme_name.split()[0] if scheme_name else 'Unknown' 
                 
                 # Create or update fund
                 fund = Fund.query.filter_by(isin=isin).first()
