@@ -95,6 +95,7 @@ class FundDataImporter:
         try:
             # Read Excel file
             df = pd.read_excel(self.factsheet_file)
+            df.dropna(subset=['ISIN'])
             logger.info(f"Found {len(df)} records in factsheet data")
             
             if clear_existing and len(df) > 0:
@@ -124,6 +125,11 @@ class FundDataImporter:
                 scheme_name = row['Scheme Name']
                 fund_type = row['Type']
                 fund_subtype = row['Subtype']
+                
+                # Skip if ISIN is not valid
+                if pd.isna(isin) or not str(isin).strip():
+                    logger.warning(f"Skipping row with invalid ISIN: {isin}")
+                    continue
                 
                 # Get AMC name from the AMC column
                 amc_name = row['AMC'] if not pd.isna(row['AMC']) else 'Unknown' 
