@@ -185,6 +185,7 @@ class FundDataImporter:
                     
                     # Commit every 100 records to avoid large transactions
                     if (index + 1) % 100 == 0:
+                        logger.info(f"Processed {index + 1} records")
                         db.session.commit()
                         logger.info(f"Processed {index + 1} records")
                         

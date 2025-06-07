@@ -566,8 +566,11 @@ Select an endpoint above to see the API response...
             const resultDiv = document.getElementById(resultDivId);
             const progressDiv = document.getElementById(flowName + '-progress');
             
-            // Show progress
+            // Show progress and update button text
             submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Processing...';
+            progressDiv.style.display = 'block';
+            resultDiv.innerHTML = '';
             if (progressDiv) progressDiv.style.display = 'block';
             resultDiv.innerHTML = '';
             
@@ -590,6 +593,7 @@ Select an endpoint above to see the API response...
             .then(data => {
                 if (progressDiv) progressDiv.style.display = 'none';
                 submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Import to Database';
                 
                 if (data.error) {
                     resultDiv.innerHTML = `

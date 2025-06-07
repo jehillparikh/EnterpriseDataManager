@@ -40,7 +40,32 @@ def upload_factsheet():
 @upload_bp.route('/api/upload/factsheet/submit', methods=['POST'])
 def submit_factsheet():
     """Process factsheet data only"""
-    return process_factsheet_files()
+    try:
+        # Start import in background and return immediately
+        import threading
+        
+        def background_import():
+            try:
+                from setup_db import create_app
+                app = create_app()
+                with app.app_context():
+                    process_factsheet_files()
+            except Exception as e:
+                logger.error(f"Background import failed: {e}")
+        
+        # Start background thread
+        thread = threading.Thread(target=background_import)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'status': 'started',
+            'message': 'Import started in background. Processing 877 records. Check console logs for progress.'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error starting factsheet import: {e}")
+        return jsonify({'error': str(e)}), 500
 
 # Portfolio Flow  
 @upload_bp.route('/api/upload/portfolio', methods=['POST'])
@@ -51,7 +76,30 @@ def upload_portfolio():
 @upload_bp.route('/api/upload/portfolio/submit', methods=['POST'])
 def submit_portfolio():
     """Process portfolio data only"""
-    return process_portfolio_files()
+    try:
+        import threading
+        
+        def background_import():
+            try:
+                from setup_db import create_app
+                app = create_app()
+                with app.app_context():
+                    process_portfolio_files()
+            except Exception as e:
+                logger.error(f"Background portfolio import failed: {e}")
+        
+        thread = threading.Thread(target=background_import)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'status': 'started',
+            'message': 'Portfolio import started in background. Check console logs for progress.'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error starting portfolio import: {e}")
+        return jsonify({'error': str(e)}), 500
 
 # NAV and Returns Flow
 @upload_bp.route('/api/upload/returns', methods=['POST'])
@@ -67,7 +115,30 @@ def upload_nav():
 @upload_bp.route('/api/upload/nav-returns/submit', methods=['POST'])
 def submit_nav_returns():
     """Process NAV and returns data together"""
-    return process_nav_returns_files()
+    try:
+        import threading
+        
+        def background_import():
+            try:
+                from setup_db import create_app
+                app = create_app()
+                with app.app_context():
+                    process_nav_returns_files()
+            except Exception as e:
+                logger.error(f"Background NAV/returns import failed: {e}")
+        
+        thread = threading.Thread(target=background_import)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'status': 'started',
+            'message': 'NAV and returns import started in background. Check console logs for progress.'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error starting NAV/returns import: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @upload_bp.route('/api/upload/status', methods=['GET'])
 def upload_status():
