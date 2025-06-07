@@ -359,19 +359,39 @@ class FundDataImporter:
                 # Get the fund ISIN from our mapping
                 fund_isin = fund_name_to_isin[fund_name]
                 
-                # Create portfolio holding
-                holding = PortfolioHolding(
-                    isin=fund_isin,
-                    instrument_isin=row['ISIN'] if not pd.isna(row['ISIN']) else None,  # This is the security ISIN, not the fund ISIN
-                    coupon=row['Coupon (%)'] if not pd.isna(row['Coupon (%)']) else None,
-                    instrument_name=row['Name Of the Instrument'],
-                    sector=row['Sector'] if not pd.isna(row['Sector']) else None,
-                    quantity=row['Quantity'] if not pd.isna(row['Quantity']) else None,
-                    value=row['Value'] if not pd.isna(row['Value']) else None,
-                    percentage_to_nav=row['% to NAV'] if not pd.isna(row['% to NAV']) else 0.0,
-                    yield_value=row['Yield'] if not pd.isna(row['Yield']) else None,
-                    instrument_type=row['Type'] if not pd.isna(row['Type']) else 'Other'
-                )
+                # Helper function to safely convert to float
+                def safe_float(val):
+                    if pd.isna(val):
+                        return None
+                    try:
+                        # Remove any non-numeric characters except decimal points and minus signs
+                        if isinstance(val, str):
+                            # Replace @ symbols and other invalid chars with empty string
+                            cleaned = ''.join(c for c in val if c.isdigit() or c in '.-')
+                            if not cleaned or cleaned in ['.', '-', '.-']:
+                                return None
+                            return float(cleaned)
+                        return float(val)
+                    except (ValueError, TypeError):
+                        return None
+                
+                # Create portfolio holding with data validation
+                try:
+                    holding = PortfolioHolding(
+                        isin=fund_isin,
+                        instrument_isin=str(row['ISIN']).strip() if not pd.isna(row['ISIN']) else None,
+                        coupon=safe_float(row['Coupon (%)']),
+                        instrument_name=str(row['Name Of the Instrument']).strip(),
+                        sector=str(row['Sector']).strip() if not pd.isna(row['Sector']) else None,
+                        quantity=safe_float(row['Quantity']),
+                        value=safe_float(row['Value']),
+                        percentage_to_nav=safe_float(row['% to NAV']) or 0.0,
+                        yield_value=safe_float(row['Yield']),
+                        instrument_type=str(row['Type']).strip() if not pd.isna(row['Type']) else 'Other'
+                    )
+                except Exception as e:
+                    logger.error(f"Error creating portfolio holding for {fund_name}: {e}")
+                    continue
                 db.session.add(holding)
                 stats['holdings_created'] += 1
                 

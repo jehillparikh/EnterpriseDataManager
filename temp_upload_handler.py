@@ -117,12 +117,33 @@ def submit_portfolio():
                 app = create_app()
                 with app.app_context():
                     from data.fund_data_importer import FundDataImporter
+                    from import_status import status_tracker
                     
+                    # Update status to running
+                    status_tracker.update_status('portfolio', 'running', 'Processing portfolio data...', 0)
+                    
+                    # Set up file paths for importer
+                    import os
+                    temp_dir = os.path.join(os.getcwd(), 'temp_uploads')
+                    portfolio_path = os.path.join(temp_dir, 'portfolio_data.xlsx')
+                    
+                    if not os.path.exists(portfolio_path):
+                        status_tracker.update_status('portfolio', 'error', 'No portfolio file found in temp directory')
+                        logger.error("No portfolio file found in temp directory")
+                        return
+                    
+                    # Process portfolio files using uploaded file
                     importer = FundDataImporter()
+                    importer.portfolio_file = portfolio_path
                     results = importer.import_portfolio_data()
+                    
+                    # Update status to completed
+                    status_tracker.update_status('portfolio', 'completed', 'Portfolio import completed successfully', 100, results)
                     logger.info(f"Background portfolio import completed: {results}")
                     
             except Exception as e:
+                from import_status import status_tracker
+                status_tracker.update_status('portfolio', 'error', f'Portfolio import failed: {str(e)}')
                 logger.error(f"Background portfolio import failed: {e}")
                 import traceback
                 logger.error(f"Traceback: {traceback.format_exc()}")
@@ -164,14 +185,46 @@ def submit_nav_returns():
                 app = create_app()
                 with app.app_context():
                     from data.fund_data_importer import FundDataImporter
+                    from import_status import status_tracker
                     
+                    # Update status to running
+                    status_tracker.update_status('nav-returns', 'running', 'Processing NAV and returns data...', 0)
+                    
+                    # Set up file paths for importer
+                    import os
+                    temp_dir = os.path.join(os.getcwd(), 'temp_uploads')
+                    returns_path = os.path.join(temp_dir, 'returns_data.xlsx')
+                    nav_path = os.path.join(temp_dir, 'nav_data.xlsx')
+                    
+                    # Check if at least one file exists
+                    has_returns = os.path.exists(returns_path)
+                    has_nav = os.path.exists(nav_path)
+                    
+                    if not has_returns and not has_nav:
+                        status_tracker.update_status('nav-returns', 'error', 'No returns or NAV files found in temp directory')
+                        logger.error("No returns or NAV files found in temp directory")
+                        return
+                    
+                    # Process available files using uploaded files
                     importer = FundDataImporter()
-                    # Import both returns and NAV data
-                    returns_results = importer.import_returns_data()
-                    nav_results = importer.import_nav_data()
-                    logger.info(f"Background NAV/returns import completed - Returns: {returns_results}, NAV: {nav_results}")
+                    results = {}
+                    
+                    if has_returns:
+                        importer.returns_file = returns_path
+                        results['returns'] = importer.import_returns_data()
+                        status_tracker.update_status('nav-returns', 'running', 'Returns data processed, working on NAV...', 50)
+                    
+                    if has_nav:
+                        importer.nav_file = nav_path
+                        results['nav'] = importer.import_nav_data()
+                    
+                    # Update status to completed
+                    status_tracker.update_status('nav-returns', 'completed', 'NAV and returns import completed successfully', 100, results)
+                    logger.info(f"Background NAV/returns import completed: {results}")
                     
             except Exception as e:
+                from import_status import status_tracker
+                status_tracker.update_status('nav-returns', 'error', f'NAV/returns import failed: {str(e)}')
                 logger.error(f"Background NAV/returns import failed: {e}")
                 import traceback
                 logger.error(f"Traceback: {traceback.format_exc()}")
