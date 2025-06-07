@@ -46,12 +46,34 @@ def submit_factsheet():
         
         def background_import():
             try:
-                from setup_db import create_app
+                from flask import current_app
+                from setup_db import create_app, db
+                
+                # Create new app instance for background processing
                 app = create_app()
                 with app.app_context():
-                    process_factsheet_files()
+                    # Import models within app context
+                    from data.fund_data_importer import FundDataImporter
+                    
+                    # Set up file paths for importer
+                    import os
+                    temp_dir = os.path.join(os.getcwd(), 'temp_uploads')
+                    factsheet_path = os.path.join(temp_dir, 'factsheet_data.xlsx')
+                    
+                    if not os.path.exists(factsheet_path):
+                        logger.error("No factsheet file found in temp directory")
+                        return
+                    
+                    # Process factsheet files
+                    importer = FundDataImporter()
+                    importer.factsheet_file = factsheet_path
+                    results = importer.import_factsheet_data(clear_existing=False)
+                    logger.info(f"Background factsheet import completed: {results}")
+                    
             except Exception as e:
                 logger.error(f"Background import failed: {e}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
         
         # Start background thread
         thread = threading.Thread(target=background_import)
@@ -81,12 +103,20 @@ def submit_portfolio():
         
         def background_import():
             try:
-                from setup_db import create_app
+                from setup_db import create_app, db
+                
                 app = create_app()
                 with app.app_context():
-                    process_portfolio_files()
+                    from data.fund_data_importer import FundDataImporter
+                    
+                    importer = FundDataImporter()
+                    results = importer.import_portfolio_data()
+                    logger.info(f"Background portfolio import completed: {results}")
+                    
             except Exception as e:
                 logger.error(f"Background portfolio import failed: {e}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
         
         thread = threading.Thread(target=background_import)
         thread.daemon = True
@@ -120,12 +150,22 @@ def submit_nav_returns():
         
         def background_import():
             try:
-                from setup_db import create_app
+                from setup_db import create_app, db
+                
                 app = create_app()
                 with app.app_context():
-                    process_nav_returns_files()
+                    from data.fund_data_importer import FundDataImporter
+                    
+                    importer = FundDataImporter()
+                    # Import both returns and NAV data
+                    returns_results = importer.import_returns_data()
+                    nav_results = importer.import_nav_data()
+                    logger.info(f"Background NAV/returns import completed - Returns: {returns_results}, NAV: {nav_results}")
+                    
             except Exception as e:
                 logger.error(f"Background NAV/returns import failed: {e}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
         
         thread = threading.Thread(target=background_import)
         thread.daemon = True
