@@ -688,6 +688,46 @@ Select an endpoint above to see the API response...
                 });
             }
         }
+        
+        // Status polling function for real-time updates
+        function startStatusPolling(flowName) {
+            const statusDiv = document.getElementById(`${flowName}-live-status`);
+            if (!statusDiv) return;
+            
+            const pollInterval = setInterval(() => {
+                fetch(`/api/import/status?flow=${flowName}`)
+                    .then(response => response.json())
+                    .then(status => {
+                        if (status.status === 'completed') {
+                            clearInterval(pollInterval);
+                            statusDiv.innerHTML = `
+                                <div class="alert alert-success">
+                                    <strong>Import Completed:</strong> ${status.message}
+                                    ${status.stats ? `<br><small>Processed: ${JSON.stringify(status.stats)}</small>` : ''}
+                                </div>
+                            `;
+                        } else if (status.status === 'error') {
+                            clearInterval(pollInterval);
+                            statusDiv.innerHTML = `
+                                <div class="alert alert-danger">
+                                    <strong>Import Failed:</strong> ${status.message}
+                                </div>
+                            `;
+                        } else if (status.status === 'running') {
+                            statusDiv.innerHTML = `
+                                <div class="alert alert-info">
+                                    <strong>Processing:</strong> ${status.message}
+                                    <div class="mt-2"><div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width: ${status.progress || 50}%"></div></div></div>
+                                    <small class="text-muted">Last updated: ${new Date(status.last_updated).toLocaleTimeString()}</small>
+                                </div>
+                            `;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error polling status:', error);
+                    });
+            }, 2000); // Poll every 2 seconds
+        }
     </script>
 </body>
 </html>
