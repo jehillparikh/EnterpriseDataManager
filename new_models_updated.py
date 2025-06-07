@@ -11,7 +11,7 @@ class Fund(db.Model):
     isin = db.Column(db.String(12), primary_key=True)
     scheme_name = db.Column(db.String(255), nullable=False)
     fund_type = db.Column(db.String(50), nullable=False)  # Type (equity, debt, hybrid)
-    fund_subtype = db.Column(db.String(50), nullable=True)  # Subtype
+    fund_subtype = db.Column(db.String(100), nullable=True)  # Subtype
     amc_name = db.Column(db.String(100), nullable=False)  # Fund house name
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

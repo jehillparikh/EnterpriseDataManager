@@ -605,10 +605,14 @@ Select an endpoint above to see the API response...
                     let resultsHtml = '';
                     
                     if (data.status === 'started') {
-                        resultsHtml = `<div class="alert alert-info">
+                        resultsHtml = `<div class="alert alert-info" id="${flowName}-live-status">
                             <strong>Processing Started:</strong> ${data.message}
-                            <br><small class="text-muted">Import is running in the background. Check the console logs for detailed progress updates.</small>
+                            <br><small class="text-muted">Import is running in the background. Checking status...</small>
+                            <div class="mt-2"><div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 10%"></div></div></div>
                         </div>`;
+                        
+                        // Start polling for status updates
+                        startStatusPolling(flowName);
                     } else {
                         resultsHtml = '<div class="alert alert-success"><strong>Success:</strong> ' + data.message + '</div>';
                         

@@ -52,8 +52,11 @@ def submit_factsheet():
                 # Create new app instance for background processing
                 app = create_app()
                 with app.app_context():
-                    # Import models within app context
                     from data.fund_data_importer import FundDataImporter
+                    from import_status import status_tracker
+                    
+                    # Update status to running
+                    status_tracker.update_status('factsheet', 'running', 'Processing factsheet data...', 0)
                     
                     # Set up file paths for importer
                     import os
@@ -61,6 +64,7 @@ def submit_factsheet():
                     factsheet_path = os.path.join(temp_dir, 'factsheet_data.xlsx')
                     
                     if not os.path.exists(factsheet_path):
+                        status_tracker.update_status('factsheet', 'error', 'No factsheet file found in temp directory')
                         logger.error("No factsheet file found in temp directory")
                         return
                     
@@ -68,9 +72,14 @@ def submit_factsheet():
                     importer = FundDataImporter()
                     importer.factsheet_file = factsheet_path
                     results = importer.import_factsheet_data(clear_existing=False)
+                    
+                    # Update status to completed
+                    status_tracker.update_status('factsheet', 'completed', 'Factsheet import completed successfully', 100, results)
                     logger.info(f"Background factsheet import completed: {results}")
                     
             except Exception as e:
+                from import_status import status_tracker
+                status_tracker.update_status('factsheet', 'error', f'Import failed: {str(e)}')
                 logger.error(f"Background import failed: {e}")
                 import traceback
                 logger.error(f"Traceback: {traceback.format_exc()}")
@@ -184,6 +193,18 @@ def submit_nav_returns():
 def upload_status():
     """Check status of uploaded files"""
     return get_upload_status()
+
+@upload_bp.route('/api/import/status', methods=['GET'])
+def import_status():
+    """Get real-time import status for all flows"""
+    try:
+        from import_status import status_tracker
+        flow_type = request.args.get('flow')
+        status = status_tracker.get_status(flow_type)
+        return jsonify(status)
+    except Exception as e:
+        logger.error(f"Error getting import status: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @upload_bp.route('/api/upload/clear', methods=['POST'])
 def clear_uploads():
