@@ -31,30 +31,43 @@ def upload_page():
     """Display the file upload page"""
     return render_template('main_dashboard.html')
 
+# Factsheet Flow
 @upload_bp.route('/api/upload/factsheet', methods=['POST'])
 def upload_factsheet():
     """Upload factsheet file to temp storage"""
     return store_file('factsheet', 'factsheet_data.xlsx')
 
-@upload_bp.route('/api/upload/returns', methods=['POST'])
-def upload_returns():
-    """Upload returns file to temp storage"""
-    return store_file('returns', 'returns_data.xlsx')
+@upload_bp.route('/api/upload/factsheet/submit', methods=['POST'])
+def submit_factsheet():
+    """Process factsheet data only"""
+    return process_factsheet_files()
 
+# Portfolio Flow  
 @upload_bp.route('/api/upload/portfolio', methods=['POST'])
 def upload_portfolio():
     """Upload portfolio file to temp storage"""
     return store_file('portfolio', 'portfolio_data.xlsx')
+
+@upload_bp.route('/api/upload/portfolio/submit', methods=['POST'])
+def submit_portfolio():
+    """Process portfolio data only"""
+    return process_portfolio_files()
+
+# NAV and Returns Flow
+@upload_bp.route('/api/upload/returns', methods=['POST'])
+def upload_returns():
+    """Upload returns file to temp storage"""
+    return store_file('returns', 'returns_data.xlsx')
 
 @upload_bp.route('/api/upload/nav', methods=['POST'])
 def upload_nav():
     """Upload NAV file to temp storage"""
     return store_file('nav', 'nav_data.xlsx')
 
-@upload_bp.route('/api/upload/submit', methods=['POST'])
-def submit_to_database():
-    """Process all uploaded files and import to database"""
-    return process_all_files()
+@upload_bp.route('/api/upload/nav-returns/submit', methods=['POST'])
+def submit_nav_returns():
+    """Process NAV and returns data together"""
+    return process_nav_returns_files()
 
 @upload_bp.route('/api/upload/status', methods=['GET'])
 def upload_status():
@@ -94,59 +107,103 @@ def store_file(data_type, temp_filename):
         logger.error(f"Error storing {data_type} file: {e}")
         return jsonify({'error': str(e)}), 500
 
-def process_all_files():
-    """Process all uploaded files and import to database"""
+def process_factsheet_files():
+    """Process factsheet data only"""
     try:
-        # Get options from form
         clear_existing = request.form.get('clear_existing', 'false').lower() == 'true'
-        batch_size = int(request.form.get('batch_size', 1000))
+        
+        factsheet_path = os.path.join(TEMP_UPLOAD_DIR, 'factsheet_data.xlsx')
+        
+        if not os.path.exists(factsheet_path):
+            return jsonify({'error': 'No factsheet file found. Please upload a factsheet file first.'}), 400
         
         # Create importer
         importer = FundDataImporter()
+        importer.factsheet_file = factsheet_path
         
-        # Set file paths for available files
-        factsheet_path = os.path.join(TEMP_UPLOAD_DIR, 'factsheet_data.xlsx')
-        returns_path = os.path.join(TEMP_UPLOAD_DIR, 'returns_data.xlsx')
+        # Import factsheet data
+        results = importer.import_factsheet_data(clear_existing=clear_existing)
+        logger.info("Factsheet data imported successfully")
+        
+        return jsonify({
+            'message': 'Factsheet data imported successfully',
+            'results': {'factsheet': results},
+            'processed_files': ['factsheet']
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error processing factsheet: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def process_portfolio_files():
+    """Process portfolio data only"""
+    try:
+        clear_existing = request.form.get('clear_existing', 'false').lower() == 'true'
+        batch_size = int(request.form.get('batch_size', 1000))
+        
         portfolio_path = os.path.join(TEMP_UPLOAD_DIR, 'portfolio_data.xlsx')
+        
+        if not os.path.exists(portfolio_path):
+            return jsonify({'error': 'No portfolio file found. Please upload a portfolio file first.'}), 400
+        
+        # Create importer
+        importer = FundDataImporter()
+        importer.portfolio_file = portfolio_path
+        
+        # Import portfolio data
+        results = importer.import_portfolio_data(clear_existing=clear_existing)
+        logger.info("Portfolio data imported successfully")
+        
+        return jsonify({
+            'message': 'Portfolio data imported successfully',
+            'results': {'portfolio': results},
+            'processed_files': ['portfolio']
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error processing portfolio: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def process_nav_returns_files():
+    """Process NAV and returns data together"""
+    try:
+        clear_existing = request.form.get('clear_existing', 'false').lower() == 'true'
+        batch_size = int(request.form.get('batch_size', 1000))
+        
+        returns_path = os.path.join(TEMP_UPLOAD_DIR, 'returns_data.xlsx')
         nav_path = os.path.join(TEMP_UPLOAD_DIR, 'nav_data.xlsx')
         
+        # Check if at least one file exists
+        has_returns = os.path.exists(returns_path)
+        has_nav = os.path.exists(nav_path)
+        
+        if not has_returns and not has_nav:
+            return jsonify({'error': 'No NAV or returns files found. Please upload at least one file first.'}), 400
+        
+        # Create importer
+        importer = FundDataImporter()
         results = {}
         
-        # Import factsheet data if available
-        if os.path.exists(factsheet_path):
-            importer.factsheet_file = factsheet_path
-            results['factsheet'] = importer.import_factsheet_data(clear_existing=clear_existing)
-            logger.info("Factsheet data imported successfully")
-        
         # Import returns data if available
-        if os.path.exists(returns_path):
+        if has_returns:
             importer.returns_file = returns_path
             results['returns'] = importer.import_returns_data(clear_existing=clear_existing)
             logger.info("Returns data imported successfully")
         
-        # Import portfolio data if available
-        if os.path.exists(portfolio_path):
-            importer.portfolio_file = portfolio_path
-            results['portfolio'] = importer.import_portfolio_data(clear_existing=clear_existing)
-            logger.info("Portfolio data imported successfully")
-        
         # Import NAV data if available
-        if os.path.exists(nav_path):
+        if has_nav:
             importer.nav_file = nav_path
             results['nav'] = importer.import_nav_data(clear_existing=clear_existing, batch_size=batch_size)
             logger.info("NAV data imported successfully")
         
-        if not results:
-            return jsonify({'error': 'No files found to process'}), 400
-        
         return jsonify({
-            'message': 'All data imported successfully',
+            'message': 'NAV and returns data imported successfully',
             'results': results,
             'processed_files': list(results.keys())
         }), 200
         
     except Exception as e:
-        logger.error(f"Error processing files: {e}")
+        logger.error(f"Error processing NAV/returns: {e}")
         return jsonify({'error': str(e)}), 500
 
 def get_upload_status():
