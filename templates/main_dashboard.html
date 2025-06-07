@@ -627,13 +627,10 @@ Select an endpoint above to see the API response...
                                 } else {
                                     resultsHtml += `<li>Status: ${stats}</li>`;
                                 }
+                                resultsHtml += '</ul></div></div>';
                             }
+                            resultsHtml += '</div>';
                         }
-                    }
-                            
-                            resultsHtml += '</ul></div></div>';
-                        }
-                        resultsHtml += '</div>';
                     }
                     
                     resultDiv.innerHTML = resultsHtml;
