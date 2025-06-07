@@ -28,11 +28,7 @@ class FundDataImporter:
     """
     
     def __init__(self):
-        """Initialize the FundDataImporter with a Flask app context"""
-        self.app = create_app()
-        self.app_context = self.app.app_context()
-        self.app_context.push()
-        
+        """Initialize the FundDataImporter - uses existing Flask app context"""
         # Define file paths - use absolute paths to ensure we find the files
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.excel_dir = os.path.join(root_dir, 'attached_assets')
@@ -47,13 +43,6 @@ class FundDataImporter:
         logger.info(f"Returns file: {self.returns_file}")
         logger.info(f"Portfolio file: {self.portfolio_file}")
         logger.info(f"NAV file: {self.nav_file}")
-        
-    def __del__(self):
-        """Clean up resources when the object is destroyed"""
-        try:
-            self.app_context.pop()
-        except:
-            pass
     
     def _parse_date(self, date_value):
         """
