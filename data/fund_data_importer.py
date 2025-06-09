@@ -307,6 +307,10 @@ class FundDataImporter:
             # Read Excel file
             df = pd.read_excel(self.portfolio_file)
             logger.info(f"Found {len(df)} records in portfolio data")
+
+
+            if "Scheme Name" in df.columns:
+                df = df.rename(columns={"Scheme Name": "Fund Name"})
             
             # Get unique fund names for mapping
             fund_names = df['Fund Name'].unique().tolist()
