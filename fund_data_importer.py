@@ -68,7 +68,7 @@ class FundDataImporter:
         Returns:
             dict: Statistics about the import operation
         """
-        logger.info(f"Importing factsheet data with {len(df)} records using upsert strategy")
+        logger.info(f"Importing factsheet data with {len(df)} records using bulk upsert strategy")
 
         try:
             df = df.dropna(subset=['ISIN'])
@@ -85,15 +85,13 @@ class FundDataImporter:
                 logger.info(f"Cleared ALL existing data: {factsheet_count} factsheets and {fund_count} funds")
 
             stats = {
-                'funds_created': 0,
-                'funds_updated': 0,
-                'factsheets_created': 0,
-                'factsheets_updated': 0,
+                'funds_processed': 0,
+                'factsheets_processed': 0,
                 'total_rows_processed': len(df),
                 'batches_processed': 0
             }
 
-            # Process records in batches using upsert strategy
+            # Process records in batches using bulk upsert strategy
             for batch_start in range(0, len(df), batch_size):
                 batch_end = min(batch_start + batch_size, len(df))
                 batch_df = df.iloc[batch_start:batch_end]
@@ -101,6 +99,9 @@ class FundDataImporter:
                 total_batches = (len(df) + batch_size - 1) // batch_size
                 
                 logger.info(f"Processing batch {current_batch}/{total_batches} (rows {batch_start+1}-{batch_end})")
+                
+                fund_records = []
+                factsheet_records = []
                 
                 for idx, row in batch_df.iterrows():
                     try:
@@ -114,26 +115,14 @@ class FundDataImporter:
                         fund_subtype = str(row.get('Fund Sub Type', row.get('Subtype', ''))).strip() if not pd.isna(row.get('Fund Sub Type', row.get('Subtype'))) else None
                         amc_name = str(row.get('AMC Name', row.get('AMC', ''))).strip()
 
-                        # Upsert fund record
-                        fund = Fund.query.filter_by(isin=isin).first()
-                        if fund:
-                            # Update existing fund
-                            fund.scheme_name = scheme_name
-                            fund.fund_type = fund_type
-                            fund.fund_subtype = fund_subtype
-                            fund.amc_name = amc_name
-                            stats['funds_updated'] += 1
-                        else:
-                            # Create new fund
-                            fund = Fund(
-                                isin=isin,
-                                scheme_name=scheme_name,
-                                fund_type=fund_type,
-                                fund_subtype=fund_subtype,
-                                amc_name=amc_name
-                            )
-                            db.session.add(fund)
-                            stats['funds_created'] += 1
+                        fund_record = {
+                            'isin': isin,
+                            'scheme_name': scheme_name,
+                            'fund_type': fund_type,
+                            'fund_subtype': fund_subtype,
+                            'amc_name': amc_name
+                        }
+                        fund_records.append(fund_record)
 
                         # Extract factsheet data
                         fund_manager = str(row.get('Fund Manager', row.get('Fund Manager(s)', ''))).strip() if not pd.isna(row.get('Fund Manager', row.get('Fund Manager(s)'))) else None
@@ -142,39 +131,74 @@ class FundDataImporter:
                         launch_date = self._parse_date(row.get('Launch Date'))
                         exit_load = str(row.get('Exit Load', '')).strip() if not pd.isna(row.get('Exit Load')) else None
 
-                        # Upsert factsheet record
-                        factsheet = FundFactSheet.query.filter_by(isin=isin).first()
-                        if factsheet:
-                            # Update existing factsheet
-                            factsheet.fund_manager = fund_manager
-                            factsheet.aum = aum
-                            factsheet.expense_ratio = expense_ratio
-                            factsheet.launch_date = launch_date
-                            factsheet.exit_load = exit_load
-                            stats['factsheets_updated'] += 1
-                        else:
-                            # Create new factsheet
-                            factsheet = FundFactSheet(
-                                isin=isin,
-                                fund_manager=fund_manager,
-                                aum=aum,
-                                expense_ratio=expense_ratio,
-                                launch_date=launch_date,
-                                exit_load=exit_load
-                            )
-                            db.session.add(factsheet)
-                            stats['factsheets_created'] += 1
+                        factsheet_record = {
+                            'isin': isin,
+                            'fund_manager': fund_manager,
+                            'aum': aum,
+                            'expense_ratio': expense_ratio,
+                            'launch_date': launch_date,
+                            'exit_load': exit_load
+                        }
+                        factsheet_records.append(factsheet_record)
 
                     except Exception as e:
                         logger.error(f"Error processing row {idx+1}: {e}")
                         continue
 
+                # Bulk upsert funds using PostgreSQL ON CONFLICT
+                if fund_records:
+                    from sqlalchemy.dialects.postgresql import insert
+                    from datetime import datetime
+                    
+                    # Add timestamps to records
+                    for record in fund_records:
+                        record['created_at'] = datetime.utcnow()
+                        record['updated_at'] = datetime.utcnow()
+                    
+                    stmt = insert(Fund.__table__).values(fund_records)
+                    stmt = stmt.on_conflict_do_update(
+                        index_elements=['isin'],
+                        set_=dict(
+                            scheme_name=stmt.excluded.scheme_name,
+                            fund_type=stmt.excluded.fund_type,
+                            fund_subtype=stmt.excluded.fund_subtype,
+                            amc_name=stmt.excluded.amc_name,
+                            updated_at=stmt.excluded.updated_at
+                        )
+                    )
+                    db.session.execute(stmt)
+                    stats['funds_processed'] += len(fund_records)
+
+                # Bulk upsert factsheets using PostgreSQL ON CONFLICT
+                if factsheet_records:
+                    from sqlalchemy.dialects.postgresql import insert
+                    from datetime import datetime
+                    
+                    # Add timestamps to records
+                    for record in factsheet_records:
+                        record['last_updated'] = datetime.utcnow()
+                    
+                    stmt = insert(FundFactSheet.__table__).values(factsheet_records)
+                    stmt = stmt.on_conflict_do_update(
+                        index_elements=['isin'],
+                        set_=dict(
+                            fund_manager=stmt.excluded.fund_manager,
+                            aum=stmt.excluded.aum,
+                            expense_ratio=stmt.excluded.expense_ratio,
+                            launch_date=stmt.excluded.launch_date,
+                            exit_load=stmt.excluded.exit_load,
+                            last_updated=stmt.excluded.last_updated
+                        )
+                    )
+                    db.session.execute(stmt)
+                    stats['factsheets_processed'] += len(factsheet_records)
+
                 # Commit batch
                 db.session.commit()
                 stats['batches_processed'] += 1
-                logger.info(f"Completed batch {current_batch}/{total_batches}")
+                logger.info(f"Completed batch {current_batch}/{total_batches} - {len(fund_records)} funds, {len(factsheet_records)} factsheets")
 
-            logger.info(f"Factsheet upsert completed: {stats}")
+            logger.info(f"Bulk factsheet upsert completed: {stats}")
             return stats
             
         except Exception as e:
