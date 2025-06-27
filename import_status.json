@@ -1,11 +1,11 @@
 {
   "portfolio": {
-    "status": "running",
-    "message": "Processing portfolio data...",
-    "progress": 0,
+    "status": "error",
+    "message": "Portfolio import failed: (psycopg2.errors.UndefinedFunction) operator does not exist: character varying = double precision\nLINE 3: WHERE mf_fund.isin IN ('INF179K01343', 'INF179K01830', 'INF1...\n                           ^\nHINT:  No operator matches the given name and argument types. You might need to add explicit type casts.\n\n[SQL: SELECT mf_fund.isin AS mf_fund_isin, mf_fund.scheme_name AS mf_fund_scheme_name, mf_fund.fund_type AS mf_fund_fund_type, mf_fund.fund_subtype AS mf_fund_fund_subtype, mf_fund.amc_name AS mf_fund_amc_name, mf_fund.created_at AS mf_fund_created_at, mf_fund.updated_at AS mf_fund_updated_at \nFROM mf_fund \nWHERE mf_fund.isin IN (%(isin_1_1)s, %(isin_1_2)s, %(isin_1_3)s, %(isin_1_4)s, %(isin_1_5)s, %(isin_1_6)s, %(isin_1_7)s, %(isin_1_8)s, %(isin_1_9)s, %(isin_1_10)s, %(isin_1_11)s, %(isin_1_12)s, %(isin_1_13)s, %(isin_1_14)s, %(isin_1_15)s, %(isin_1_16)s, %(isin_1_17)s, %(isin_1_18)s, %(isin_1_19)s, %(isin_1_20)s, %(isin_1_21)s, %(isin_1_22)s)]\n[parameters: {'isin_1_1': 'INF179K01343', 'isin_1_2': 'INF179K01830', 'isin_1_3': 'INF179KC1BJ4', 'isin_1_4': 'INF179KA1JC4', 'isin_1_5': '-', 'isin_1_6': 'INF179KC1AR9', 'isin_1_7': nan, 'isin_1_8': 'INF179K01AM7', 'isin_1_9': 'INF179K01608', 'isin_1_10': 'INF179K01AE4', 'isin_1_11': 'INF179KA1RT1', 'isin_1_12': 'INF179K01BC6', 'isin_1_13': 'INF179K01KQ7', 'isin_1_14': 'INF179K01CR2', 'isin_1_15': 'INF179KB1HR5', 'isin_1_16': 'INF179KC1BV9', 'isin_1_17': 'INF179K01AP0', 'isin_1_18': 'INF179KB1HS3', 'isin_1_19': 'INF179KA1RZ8', 'isin_1_20': 'INF179KC1HF9', 'isin_1_21': 'INF179KC1GX4', 'isin_1_22': 'INF179KB11R3'}]\n(Background on this error at: https://sqlalche.me/e/20/f405)",
+    "progress": null,
     "stats": null,
-    "timestamp": "2025-06-07T13:51:59.185845",
-    "last_updated": "2025-06-07T13:51:59.185851"
+    "timestamp": "2025-06-27T16:47:19.857670",
+    "last_updated": "2025-06-27T16:47:19.857680"
   },
   "factsheet": {
     "status": "completed",
