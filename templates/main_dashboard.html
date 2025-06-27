@@ -367,12 +367,23 @@ Select an endpoint above to see the API response...
                 body: formData
             })
             .then(response => {
+                console.log('Response status:', response.status);
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    return response.text().then(text => {
+                        throw new Error(`HTTP ${response.status}: ${text}`);
+                    });
                 }
-                return response.json();
+                return response.text().then(text => {
+                    console.log('Response text:', text);
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error(`Invalid JSON response: ${text}`);
+                    }
+                });
             })
             .then(data => {
+                console.log('Parsed data:', data);
                 progressDiv.style.display = 'none';
                 uploadButton.disabled = false;
 
