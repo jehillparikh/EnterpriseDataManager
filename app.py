@@ -3,6 +3,7 @@ import logging
 from flask import Flask, render_template, send_file, Response
 from setup_db import create_app, db
 from fund_api import init_fund_api
+from upload_handler import init_upload_routes
 import config
 
 # Configure logging
@@ -29,6 +30,10 @@ def init_app():
     app = init_fund_api(app)
     logger.info("API routes registered successfully")
     
+    # Register upload routes
+    init_upload_routes(app)
+    logger.info("Upload routes registered successfully")
+    
     return app
 
 # Create Flask application
@@ -37,7 +42,7 @@ app = init_app()
 @app.route('/')
 def index():
     """Homepage route"""
-    return "<h1>Mutual Fund API</h1><p>API is running. Use /api/funds to access fund data.</p>"
+    return render_template('main_dashboard.html')
 
 
 if __name__ == '__main__':
