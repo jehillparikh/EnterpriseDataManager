@@ -21,6 +21,7 @@ def init_app():
         from models import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory
         
         try:
+            # Create all tables
             db.create_all()
             logger.info("Database tables created successfully")
         except Exception as e:
