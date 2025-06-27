@@ -366,7 +366,12 @@ Select an endpoint above to see the API response...
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 progressDiv.style.display = 'none';
                 uploadButton.disabled = false;
@@ -425,11 +430,13 @@ Select an endpoint above to see the API response...
             .catch(error => {
                 progressDiv.style.display = 'none';
                 uploadButton.disabled = false;
-                addToConsole(`[${new Date().toLocaleTimeString()}] NETWORK ERROR: ${error.message}`, 'error');
+                console.error('Upload error:', error);
+                addToConsole(`[${new Date().toLocaleTimeString()}] ERROR: ${error.message}`, 'error');
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
                         <h5><i class="fas fa-times-circle me-2"></i>Upload Error</h5>
                         <p>${error.message}</p>
+                        <small class="text-muted">Check browser console for detailed error information.</small>
                     </div>
                 `;
             });
