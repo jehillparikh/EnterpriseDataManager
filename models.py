@@ -139,6 +139,7 @@ class FundRating(db.Model):
     rating_outlook = db.Column(db.String(20), nullable=True)  # Positive, Negative, Stable, Under Review
     rating_description = db.Column(db.Text, nullable=True)  # Additional rating commentary
     is_current = db.Column(db.Boolean, default=True)  # Flag to mark current vs historical ratings
+    devmani_recommended = db.Column(db.Boolean, default=False)  # Devmani recommendation flag
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -149,6 +150,7 @@ class FundRating(db.Model):
         Index('idx_rating_agency_category', 'rating_agency', 'rating_category'),
         Index('idx_rating_current', 'is_current'),
         Index('idx_rating_date', 'rating_date'),
+        Index('idx_devmani_recommended', 'devmani_recommended'),
         CheckConstraint('rating_numeric >= 0', name='check_rating_numeric_positive'),
         CheckConstraint('rating_numeric <= 10', name='check_rating_numeric_max'),
     )
