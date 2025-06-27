@@ -165,6 +165,12 @@ The application uses a PostgreSQL database with the following key architectural 
   - Better column mapping for flexible Excel file formats
   - Added detailed import statistics tracking
   - Fixed JSON parsing errors in frontend upload functionality
+- June 27, 2025: Enhanced ISIN validation for holdings import
+  - Added comprehensive Scheme ISIN validation to skip invalid values
+  - Validates against empty strings, "-", NaN, None, and short ISINs
+  - Checks fund existence in database before importing holdings
+  - Added detailed skip tracking: rows_skipped_invalid_isin, rows_skipped_no_fund
+  - Prevents database errors from invalid ISIN references
 
 ## User Preferences
 
