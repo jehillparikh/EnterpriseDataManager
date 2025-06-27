@@ -57,7 +57,9 @@ def upload_file():
             importer = FundDataImporter()
             
             if file_type == 'factsheet':
-                stats = importer.import_factsheet_data(df, clear_existing)
+                # Use adaptive batch sizing for factsheet imports to prevent timeouts
+                adaptive_batch_size = 25 if len(df) > 100 else 50
+                stats = importer.import_factsheet_data(df, clear_existing, adaptive_batch_size)
             elif file_type == 'holdings':
                 stats = importer.import_holdings_data(df, clear_existing)
             elif file_type == 'returns':
