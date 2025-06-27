@@ -294,6 +294,8 @@ class FundDataImporter:
             # Track statistics
             stats = {
                 'holdings_created': 0,
+                'rows_skipped_invalid_isin': 0,
+                'rows_skipped_no_fund': 0,
                 'total_rows_processed': len(df)
             }
             
@@ -301,7 +303,24 @@ class FundDataImporter:
             for _, row in df.iterrows():
                 try:
                     scheme_isin = str(row.get('Scheme ISIN', '')).strip()
-                    if not scheme_isin or scheme_isin.lower() == 'nan':
+                    
+                    # Skip if Scheme ISIN is invalid, empty, NaN, or contains invalid characters
+                    if (not scheme_isin or 
+                        scheme_isin.lower() == 'nan' or 
+                        scheme_isin == '' or 
+                        scheme_isin == '-' or 
+                        scheme_isin == 'None' or
+                        pd.isna(row.get('Scheme ISIN')) or
+                        len(scheme_isin) < 8):  # ISIN should be at least 8 characters
+                        logger.warning(f"Skipping row with invalid Scheme ISIN: '{scheme_isin}'")
+                        stats['rows_skipped_invalid_isin'] += 1
+                        continue
+                    
+                    # Check if the fund exists in database
+                    fund_exists = Fund.query.filter_by(isin=scheme_isin).first()
+                    if not fund_exists:
+                        logger.warning(f"Skipping holding for non-existent fund ISIN: '{scheme_isin}'")
+                        stats['rows_skipped_no_fund'] += 1
                         continue
                     
                     holding = FundHolding()
