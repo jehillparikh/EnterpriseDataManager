@@ -189,186 +189,56 @@ Select an endpoint above to see the API response...
                         </div>
                     </div>
 
-                    <!-- Clear All Files -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <div class="text-end">
-                                <button class="btn btn-outline-danger" onclick="clearAllFiles()">
-                                    Clear All Temporary Files
+                    <!-- Upload Form -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="mb-0">📂 Data Upload</h4>
+                            <small class="text-muted">Select file type and upload Excel data to the database</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="file-type-select" class="form-label">Data Type</label>
+                                    <select class="form-select" id="file-type-select">
+                                        <option value="">Select data type...</option>
+                                        <option value="factsheet">Factsheet Data</option>
+                                        <option value="holdings">Fund Holdings</option>
+                                        <option value="returns">Returns Data</option>
+                                        <option value="nav">NAV History</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <label for="upload-file" class="form-label">Excel File</label>
+                                    <input type="file" class="form-control" id="upload-file" accept=".xlsx,.xls">
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="clear-existing">
+                                        <label class="form-check-label" for="clear-existing">
+                                            Clear existing data before import
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6" id="batch-size-container" style="display: none;">
+                                    <label for="batch-size" class="form-label">Batch Size (for NAV files)</label>
+                                    <input type="number" class="form-control" id="batch-size" value="1000" min="100" max="10000">
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <button class="btn btn-primary btn-lg" id="upload-button" disabled onclick="uploadAndStoreFile()">
+                                    <i class="fas fa-upload me-2"></i>Upload to Server and Store to Database
                                 </button>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Flow 1: Factsheet Data -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h4 class="mb-0">📊 Flow 1: Factsheet Data</h4>
-                            <small class="text-muted">Upload and process fund basic information and factsheet data</small>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <input type="file" id="factsheet-file" class="file-input" accept=".xlsx,.xls">
-                                    <button class="btn btn-outline-primary" onclick="document.getElementById('factsheet-file').click()">
-                                        Choose Factsheet File
-                                    </button>
-                                    <div class="file-info" id="factsheet-info"></div>
-                                    <div class="mt-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="factsheet-clear">
-                                            <label class="form-check-label" for="factsheet-clear">
-                                                Clear existing factsheet data before import
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 text-end">
-                                    <button class="btn btn-primary upload-btn mb-2" id="factsheet-upload" disabled onclick="uploadFile('factsheet')">
-                                        Store File
-                                    </button>
-                                    <br>
-                                    <button class="btn btn-success" id="factsheet-submit" disabled onclick="submitFactsheet()">
-                                        Import to Database
-                                    </button>
-                                </div>
-                            </div>
                             
-                            <div class="progress mt-3" id="factsheet-progress">
+                            <div class="progress mt-3" id="upload-progress" style="display: none;">
                                 <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
                             </div>
-                            <div class="result mt-3" id="factsheet-result"></div>
-                        </div>
-                    </div>
-
-                    <!-- Flow 2: Portfolio Data -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h4 class="mb-0">💼 Flow 2: Portfolio Holdings</h4>
-                            <small class="text-muted">Upload and process fund portfolio holdings and allocations</small>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <input type="file" id="portfolio-file" class="file-input" accept=".xlsx,.xls">
-                                    <button class="btn btn-outline-primary" onclick="document.getElementById('portfolio-file').click()">
-                                        Choose Portfolio File
-                                    </button>
-                                    <div class="file-info" id="portfolio-info"></div>
-                                    <div class="mt-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="portfolio-clear">
-                                            <label class="form-check-label" for="portfolio-clear">
-                                                Clear existing portfolio data before import
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 text-end">
-                                    <button class="btn btn-primary upload-btn mb-2" id="portfolio-upload" disabled onclick="uploadFile('portfolio')">
-                                        Store File
-                                    </button>
-                                    <br>
-                                    <button class="btn btn-success" id="portfolio-submit" disabled onclick="submitPortfolio()">
-                                        Import to Database
-                                    </button>
-                                </div>
-                            </div>
                             
-                            <div class="progress mt-3" id="portfolio-progress">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
-                            </div>
-                            <div class="result mt-3" id="portfolio-result"></div>
-                        </div>
-                    </div>
-
-                    <!-- Flow 3: Returns Data -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h4 class="mb-0">📈 Flow 3: Returns Data</h4>
-                            <small class="text-muted">Upload and process fund performance returns data</small>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <input type="file" id="returns-file" class="file-input" accept=".xlsx,.xls">
-                                    <button class="btn btn-outline-primary" onclick="document.getElementById('returns-file').click()">
-                                        Choose Returns File
-                                    </button>
-                                    <div class="file-info" id="returns-info"></div>
-                                    <div class="mt-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="returns-clear">
-                                            <label class="form-check-label" for="returns-clear">
-                                                Clear existing returns data before import
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 text-end">
-                                    <button class="btn btn-primary upload-btn mb-2" id="returns-upload" disabled onclick="uploadFile('returns')">
-                                        Store File
-                                    </button>
-                                    <br>
-                                    <button class="btn btn-success" id="returns-submit" disabled onclick="submitReturns()">
-                                        Import to Database
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="progress mt-3" id="returns-progress">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
-                            </div>
-                            <div class="result mt-3" id="returns-result"></div>
-                        </div>
-                    </div>
-
-                    <!-- Flow 4: NAV History -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h4 class="mb-0">📊 Flow 4: NAV History</h4>
-                            <small class="text-muted">Upload and process NAV time series data</small>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <input type="file" id="nav-file" class="file-input" accept=".xlsx,.xls">
-                                    <button class="btn btn-outline-primary" onclick="document.getElementById('nav-file').click()">
-                                        Choose NAV File
-                                    </button>
-                                    <div class="file-info" id="nav-info"></div>
-                                    <div class="mt-3">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="nav-clear">
-                                                    <label class="form-check-label" for="nav-clear">
-                                                        Clear existing NAV data before import
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="nav-batch-size" class="form-label">Batch Size</label>
-                                                <input type="number" class="form-control" id="nav-batch-size" value="1000" min="100" max="10000">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 text-end">
-                                    <button class="btn btn-primary upload-btn mb-2" id="nav-upload" disabled onclick="uploadFile('nav')">
-                                        Store File
-                                    </button>
-                                    <br>
-                                    <button class="btn btn-success" id="nav-submit" disabled onclick="submitNav()">
-                                        Import to Database
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="progress mt-3" id="nav-progress">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
-                            </div>
-                            <div class="result mt-3" id="nav-result"></div>
+                            <div id="upload-result" class="mt-3"></div>
                         </div>
                     </div>
 
@@ -377,11 +247,11 @@ Select an endpoint above to see the API response...
                             <div class="alert alert-info">
                                 <h5>Upload Instructions:</h5>
                                 <ul class="mb-0">
-                                    <li>Upload files in order: Factsheet → Portfolio → Returns → NAV</li>
-                                    <li>Factsheet data must be uploaded first as it creates the base fund records</li>
-                                    <li>Only Excel files (.xlsx, .xls) are supported</li>
-                                    <li>Files are temporarily stored and automatically deleted after processing</li>
-                                    <li>Large NAV files may take several minutes to process</li>
+                                    <li>Select the appropriate data type from the dropdown menu</li>
+                                    <li>Choose your Excel file (.xlsx or .xls format)</li>
+                                    <li>Factsheet data should be uploaded first as it creates the base fund records</li>
+                                    <li>Check "Clear existing data" to replace current data with the new upload</li>
+                                    <li>For NAV files, adjust batch size if needed for large datasets</li>
                                 </ul>
                             </div>
                         </div>
@@ -393,65 +263,66 @@ Select an endpoint above to see the API response...
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // File input change handlers
-        document.getElementById('factsheet-file').addEventListener('change', function(e) {
-            handleFileSelect(e, 'factsheet');
-        });
+        // Initialize form handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileTypeSelect = document.getElementById('file-type-select');
+            const uploadFile = document.getElementById('upload-file');
+            const uploadButton = document.getElementById('upload-button');
+            const batchSizeContainer = document.getElementById('batch-size-container');
 
-        document.getElementById('portfolio-file').addEventListener('change', function(e) {
-            handleFileSelect(e, 'portfolio');
-        });
-
-        document.getElementById('returns-file').addEventListener('change', function(e) {
-            handleFileSelect(e, 'returns');
-        });
-
-        document.getElementById('nav-file').addEventListener('change', function(e) {
-            handleFileSelect(e, 'nav');
-        });
-
-        function handleFileSelect(event, type) {
-            const file = event.target.files[0];
-            const infoDiv = document.getElementById(type + '-info');
-            const uploadBtn = document.getElementById(type + '-upload');
-
-            if (file) {
-                infoDiv.innerHTML = `
-                    <div class="alert alert-secondary">
-                        <strong>Selected:</strong> ${file.name}<br>
-                        <strong>Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB
-                    </div>
-                `;
-                infoDiv.style.display = 'block';
-                uploadBtn.disabled = false;
-            } else {
-                infoDiv.style.display = 'none';
-                uploadBtn.disabled = true;
+            // Enable upload button when both file type and file are selected
+            function checkFormComplete() {
+                const fileType = fileTypeSelect.value;
+                const file = uploadFile.files[0];
+                uploadButton.disabled = !(fileType && file);
             }
-        }
 
-        function uploadFile(type) {
-            const fileInput = document.getElementById(type + '-file');
-            const progressDiv = document.getElementById(type + '-progress');
-            const resultDiv = document.getElementById(type + '-result');
-            const uploadBtn = document.getElementById(type + '-upload');
-            const submitBtn = document.getElementById(type + '-submit');
+            // Show/hide batch size for NAV files
+            fileTypeSelect.addEventListener('change', function() {
+                if (this.value === 'nav') {
+                    batchSizeContainer.style.display = 'block';
+                } else {
+                    batchSizeContainer.style.display = 'none';
+                }
+                checkFormComplete();
+            });
 
-            if (!fileInput.files[0]) {
-                alert('Please select a file first');
+            uploadFile.addEventListener('change', checkFormComplete);
+        });
+
+        function uploadAndStoreFile() {
+            const fileTypeSelect = document.getElementById('file-type-select');
+            const uploadFile = document.getElementById('upload-file');
+            const clearExisting = document.getElementById('clear-existing');
+            const batchSize = document.getElementById('batch-size');
+            const progressDiv = document.getElementById('upload-progress');
+            const resultDiv = document.getElementById('upload-result');
+            const uploadButton = document.getElementById('upload-button');
+
+            const fileType = fileTypeSelect.value;
+            const file = uploadFile.files[0];
+
+            if (!fileType || !file) {
+                alert('Please select data type and file');
                 return;
             }
 
-            // Show progress bar and disable button
+            // Show progress and disable button
             progressDiv.style.display = 'block';
-            resultDiv.style.display = 'none';
-            uploadBtn.disabled = true;
+            resultDiv.innerHTML = '';
+            uploadButton.disabled = true;
 
             // Create FormData
             const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
+            formData.append('file', file);
+            formData.append('file_type', fileType);
+            formData.append('clear_existing', clearExisting.checked);
+            
+            if (fileType === 'nav') {
+                formData.append('batch_size', batchSize.value);
+            }
 
-            // Make API call to store file
+            // Upload to server and store to database
             fetch('/api/upload', {
                 method: 'POST',
                 body: formData
@@ -459,32 +330,52 @@ Select an endpoint above to see the API response...
             .then(response => response.json())
             .then(data => {
                 progressDiv.style.display = 'none';
-                resultDiv.style.display = 'block';
-                uploadBtn.disabled = false;
+                uploadButton.disabled = false;
 
                 if (data.error) {
                     resultDiv.innerHTML = `
                         <div class="alert alert-danger">
-                            <strong>Error:</strong> ${data.error}
+                            <h5><i class="fas fa-exclamation-triangle me-2"></i>Upload Failed</h5>
+                            <p>${data.error}</p>
                         </div>
                     `;
                 } else {
+                    let statsHtml = '';
+                    if (data.stats) {
+                        statsHtml = '<div class="mt-3"><strong>Import Statistics:</strong><ul class="mb-0">';
+                        for (const [key, value] of Object.entries(data.stats)) {
+                            statsHtml += `<li>${key.replace(/_/g, ' ')}: ${value}</li>`;
+                        }
+                        statsHtml += '</ul></div>';
+                    }
+
                     resultDiv.innerHTML = `
                         <div class="alert alert-success">
-                            <strong>File Stored:</strong> ${data.message}<br>
-                            <small>Rows: ${data.rows} | Columns: ${data.columns}</small>
+                            <h5><i class="fas fa-check-circle me-2"></i>Upload Successful!</h5>
+                            <p>${data.message}</p>
+                            <div class="mt-2">
+                                <small><strong>File:</strong> ${file.name} | <strong>Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB</small>
+                                ${data.rows ? `<br><small><strong>Rows:</strong> ${data.rows} | <strong>Columns:</strong> ${data.columns}</small>` : ''}
+                            </div>
+                            ${statsHtml}
                         </div>
                     `;
-                    submitBtn.disabled = false;
+
+                    // Reset form
+                    fileTypeSelect.value = '';
+                    uploadFile.value = '';
+                    clearExisting.checked = false;
+                    document.getElementById('batch-size-container').style.display = 'none';
+                    uploadButton.disabled = true;
                 }
             })
             .catch(error => {
                 progressDiv.style.display = 'none';
-                resultDiv.style.display = 'block';
-                uploadBtn.disabled = false;
+                uploadButton.disabled = false;
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
-                        <strong>Error:</strong> ${error.message}
+                        <h5><i class="fas fa-times-circle me-2"></i>Upload Error</h5>
+                        <p>${error.message}</p>
                     </div>
                 `;
             });
@@ -532,36 +423,6 @@ Select an endpoint above to see the API response...
                 return;
             }
             testEndpoint(`/api/funds/${isin}/complete`, 'complete-result');
-        }
-
-        function clearAllFiles() {
-            if (confirm('This will clear all temporary files. Continue?')) {
-                fetch('/api/upload/clear', { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => {
-                        alert(data.message || 'Files cleared successfully');
-                    })
-                    .catch(error => {
-                        alert('Error clearing files: ' + error.message);
-                    });
-            }
-        }
-
-        // Placeholder functions for submit operations
-        function submitFactsheet() {
-            alert('Factsheet submission functionality would be implemented here');
-        }
-
-        function submitPortfolio() {
-            alert('Portfolio submission functionality would be implemented here');
-        }
-
-        function submitReturns() {
-            alert('Returns submission functionality would be implemented here');
-        }
-
-        function submitNav() {
-            alert('NAV submission functionality would be implemented here');
         }
     </script>
 </body>
