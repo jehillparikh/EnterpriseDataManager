@@ -1,0 +1,112 @@
+MUTUAL FUND API - ADDITIONAL MODELS TO IMPLEMENT
+=================================================
+
+Current Models (Completed):
+✓ Fund - Basic fund information with ISIN as primary key
+✓ FundFactSheet - Detailed fund information (AUM, expense ratio, fund manager)
+✓ FundReturns - Performance data across multiple time periods
+✓ FundHolding - Fund portfolio composition and holdings
+✓ NavHistory - Historical Net Asset Value data
+✓ FundRating - Fund ratings from various agencies with Devmani recommendation flag
+✓ FundAnalytics - Advanced analytics and risk metrics
+✓ FundStatistics - Statistical data and portfolio composition metrics
+
+Models To Be Added:
+==================
+
+1. FundManager Model
+   - Track fund manager details, experience, qualifications
+   - Manager history across different funds
+   - Performance track record
+   - Educational background and certifications
+
+2. AMC (Asset Management Company) Model
+   - Detailed AMC information beyond just name
+   - Company registration details, licenses
+   - AUM at company level
+   - Founded date, headquarters, contact info
+   - Regulatory compliance status
+
+3. Benchmark Model
+   - Store benchmark indices data for comparison
+   - Index composition and methodology
+   - Historical index values for performance comparison
+   - Multiple benchmarks per fund support
+
+4. FundDividend Model
+   - Dividend declaration and payment history
+   - Ex-dividend dates, record dates, payment dates
+   - Dividend amounts and frequency
+   - Dividend yield calculations
+
+5. FundNews Model
+   - News and announcements related to funds
+   - Press releases, regulatory filings
+   - Fund house announcements
+   - Market news affecting specific funds
+
+6. FundComparison Model
+   - Store user or system-generated fund comparisons
+   - Comparison parameters and results
+   - Saved comparison templates
+   - Historical comparison data
+
+7. MarketData Model
+   - Store market indices, interest rates for analytics
+   - Economic indicators affecting fund performance
+   - Currency exchange rates
+   - Sector performance data
+
+8. FundDocument Model
+   - Store links to annual reports, scheme documents
+   - Regulatory filings, prospectus
+   - Fact sheets, portfolio disclosure documents
+   - Document versioning and access control
+
+9. FundAlert Model
+   - Price alerts, performance alerts for users
+   - NAV change notifications
+   - Rating change alerts
+   - Portfolio rebalancing notifications
+
+10. FundCategory Model
+    - Detailed categorization beyond type/subtype
+    - SEBI category classifications
+    - Investment objective categories
+    - Risk level categorizations
+    - Tax implications categories
+
+Priority Implementation Order:
+=============================
+
+High Priority:
+- FundManager (enhances fund analysis)
+- AMC (better fund house tracking)
+- Benchmark (essential for performance comparison)
+
+Medium Priority:
+- FundDividend (income tracking)
+- FundNews (keeping users informed)
+- FundCategory (better classification)
+
+Low Priority:
+- FundComparison (user feature)
+- FundAlert (notification system)
+- FundDocument (document management)
+- MarketData (advanced analytics)
+
+Implementation Notes:
+====================
+- Each model should follow the established pattern with proper indexes
+- Include foreign key relationships to Fund model where appropriate
+- Add appropriate constraints and validation
+- Consider historical data tracking where relevant
+- Ensure scalability for large datasets
+
+Next Steps:
+===========
+1. Start with high-priority models
+2. Create API endpoints for each new model
+3. Update data import functionality
+4. Add frontend interfaces for new data
+5. Create documentation for new endpoints
