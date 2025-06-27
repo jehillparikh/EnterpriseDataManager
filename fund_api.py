@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from new_models_updated import Fund, FundFactSheet, FundReturns, PortfolioHolding, NavHistory
+from new_models_updated import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory
 from setup_db import db
 import logging
 
@@ -159,7 +159,7 @@ def get_fund_holdings(isin):
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         
-        paginated_holdings = PortfolioHolding.query.filter_by(isin=isin).paginate(
+        paginated_holdings = FundHolding.query.filter_by(isin=isin).paginate(
             page=page, per_page=per_page, error_out=False
         )
         
@@ -376,7 +376,7 @@ def get_fund_complete(isin):
                 latest_nav = nav_history_data[0]
         
         # Get portfolio holdings
-        holdings = PortfolioHolding.query.filter_by(isin=isin).all()
+        holdings = FundHolding.query.filter_by(isin=isin).all()
         holdings_data = []
         
         # Prepare data for sector analysis

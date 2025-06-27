@@ -8,7 +8,7 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from setup_db import create_app, db
-from new_models_updated import Fund, FundFactSheet, FundReturns, PortfolioHolding, NavHistory
+from new_models_updated import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -330,8 +330,8 @@ class FundDataImporter:
             # Clear existing holdings if requested
             if clear_existing and scheme_isins:
                 # Delete existing holdings for these scheme ISINs
-                deleted = PortfolioHolding.query.filter(
-                    PortfolioHolding.isin.in_(scheme_isins)
+                deleted = FundHolding.query.filter(
+                    FundHolding.isin.in_(scheme_isins)
                 ).delete(synchronize_session=False)
                 
                 db.session.commit()
@@ -375,7 +375,7 @@ class FundDataImporter:
                 
                 # Create portfolio holding with new column mapping
                 try:
-                    holding = PortfolioHolding(
+                    holding = FundHolding(
                         isin=scheme_isin,  # Use Scheme ISIN to link to fund
                         instrument_isin=str(row['ISIN']).strip() if not pd.isna(row['ISIN']) else None,
                         coupon=safe_float(row.get('Coupon', None)),

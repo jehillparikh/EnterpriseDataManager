@@ -72,13 +72,13 @@ class FundReturns(db.Model):
     )
 
 
-class PortfolioHolding(db.Model):
+class FundHolding(db.Model):
     """
-    Portfolio holdings of a mutual fund
+    Holdings/investments within a mutual fund
     Expected columns: Name of Instrument, ISIN, Coupon, Industry, Quantity, 
     Market Value, % to Net Assets, Yield, Type, AMC, Scheme Name, Scheme ISIN
     """
-    __tablename__ = 'mf_portfolio_holdings'
+    __tablename__ = 'mf_fund_holdings'
     
     id = db.Column(db.Integer, primary_key=True)
     isin = db.Column(db.String(12), db.ForeignKey('mf_fund.isin'), nullable=False)  # Scheme ISIN
@@ -96,7 +96,7 @@ class PortfolioHolding(db.Model):
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationship to Fund
-    fund = db.relationship("Fund", backref="portfolio_holdings")
+    fund = db.relationship("Fund", backref="fund_holdings")
     
     __table_args__ = (
         Index('idx_holdings_fund_isin', 'isin'),  # Optimize fund lookups

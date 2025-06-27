@@ -1,6 +1,6 @@
 from setup_db import db
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from new_models_updated import Fund, FundFactSheet, FundReturns, PortfolioHolding, NavHistory
+from new_models_updated import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory
 from datetime import datetime
 
 class DatabaseError(Exception):
@@ -363,7 +363,7 @@ class PortfolioService:
             yield_value (float, optional): Yield percentage
             
         Returns:
-            PortfolioHolding: The created holding
+            FundHolding: The created holding
             
         Raises:
             ResourceNotFoundError: If fund does not exist
