@@ -99,9 +99,6 @@ class FundHolding(db.Model):
     fund = db.relationship("Fund", backref="fund_holdings")
     
     __table_args__ = (
-        Index('idx_holdings_fund_isin', 'isin'),  # Optimize fund lookups
-        Index('idx_holdings_sector', 'sector'),  # Optimize sector lookups
-        Index('idx_holdings_type', 'instrument_type'),  # Optimize instrument type lookups
         CheckConstraint('percentage_to_nav >= 0', name='check_percentage_to_nav'),
         CheckConstraint('percentage_to_nav <= 100', name='check_percentage_to_nav_upper'),
     )
@@ -122,6 +119,5 @@ class NavHistory(db.Model):
     fund = db.relationship("Fund", backref="nav_history")
     
     __table_args__ = (
-        Index('idx_nav_history_isin_date', 'isin', 'date'),  # Optimize lookups by fund and date
         CheckConstraint('nav >= 0', name='check_nav'),
     )
