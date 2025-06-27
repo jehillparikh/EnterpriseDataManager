@@ -90,7 +90,7 @@ The application uses a PostgreSQL database with the following key architectural 
 - **Poetry**: Dependency management
 
 ### External Services
-- **PostgreSQL Database**: Hosted on Render.com
+- **PostgreSQL Database**: Google Cloud SQL (migrated from Render.com)
 - **File Storage**: Local file system for Excel uploads
 
 ## Deployment Strategy
@@ -118,7 +118,11 @@ The application uses a PostgreSQL database with the following key architectural 
 
 ## Changelog
 
-- June 27, 2025. Initial setup
+- June 27, 2025: Initial setup
+- June 27, 2025: Successfully migrated database from Render.com PostgreSQL to Google Cloud SQL
+  - Updated connection configuration to prioritize Google Cloud database
+  - Added validation for database connection strings
+  - Verified all tables and data migrated successfully (86 funds, 12 factsheets, 80 holdings, 30 NAV records)
 
 ## User Preferences
 

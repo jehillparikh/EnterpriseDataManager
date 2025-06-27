@@ -50,6 +50,22 @@ def create_app():
             from sqlalchemy.engine import make_url
             make_url(database_uri)
             logger.info("Google Cloud SQL connection string format is valid")
+            
+            # Test actual connection with a quick timeout
+            import psycopg2
+            try:
+                conn = psycopg2.connect(database_uri, connect_timeout=10)
+                conn.close()
+                logger.info("Google Cloud SQL connection test successful")
+            except psycopg2.OperationalError as conn_error:
+                logger.error(f"Google Cloud SQL connection failed: {conn_error}")
+                logger.error("This may be due to:")
+                logger.error("1. IP whitelist restrictions in Google Cloud SQL")
+                logger.error("2. Firewall settings blocking port 5432")
+                logger.error("3. Network connectivity issues")
+                logger.info("Falling back to default database connection")
+                database_uri = None
+                
         except Exception as e:
             logger.error(f"Invalid Google Cloud database URL format: {e}")
             logger.error("The connection string should be in format: postgresql://username:password@host:port/database")
@@ -75,6 +91,10 @@ def create_app():
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         "pool_recycle": 300,
         "pool_pre_ping": True,
+        "connect_args": {
+            "connect_timeout": 30,
+            "sslmode": "require"
+        }
     }
     
     # Set a secret key for the application
