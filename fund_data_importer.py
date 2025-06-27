@@ -68,7 +68,7 @@ class FundDataImporter:
         Returns:
             dict: Statistics about the import operation
         """
-        logger.info(f"Importing factsheet data with {len(df)} records")
+        logger.info(f"Importing factsheet data with {len(df)} records using upsert strategy")
 
         try:
             df = df.dropna(subset=['ISIN'])
@@ -86,78 +86,95 @@ class FundDataImporter:
 
             stats = {
                 'funds_created': 0,
+                'funds_updated': 0,
                 'factsheets_created': 0,
+                'factsheets_updated': 0,
                 'total_rows_processed': len(df),
                 'batches_processed': 0
             }
 
-            fund_records, factsheet_records = [], []
-            for idx, row in df.iterrows():
-                try:
-                    isin = str(row.get('ISIN', '')).strip()
-                    if not isin or isin.lower() == 'nan':
+            # Process records in batches using upsert strategy
+            for batch_start in range(0, len(df), batch_size):
+                batch_end = min(batch_start + batch_size, len(df))
+                batch_df = df.iloc[batch_start:batch_end]
+                current_batch = (batch_start // batch_size) + 1
+                total_batches = (len(df) + batch_size - 1) // batch_size
+                
+                logger.info(f"Processing batch {current_batch}/{total_batches} (rows {batch_start+1}-{batch_end})")
+                
+                for idx, row in batch_df.iterrows():
+                    try:
+                        isin = str(row.get('ISIN', '')).strip()
+                        if not isin or isin.lower() == 'nan':
+                            continue
+
+                        # Extract fund data
+                        scheme_name = str(row.get('Scheme Name', '')).strip()
+                        fund_type = str(row.get('Fund Type', row.get('Type', ''))).strip()
+                        fund_subtype = str(row.get('Fund Sub Type', row.get('Subtype', ''))).strip() if not pd.isna(row.get('Fund Sub Type', row.get('Subtype'))) else None
+                        amc_name = str(row.get('AMC Name', row.get('AMC', ''))).strip()
+
+                        # Upsert fund record
+                        fund = Fund.query.filter_by(isin=isin).first()
+                        if fund:
+                            # Update existing fund
+                            fund.scheme_name = scheme_name
+                            fund.fund_type = fund_type
+                            fund.fund_subtype = fund_subtype
+                            fund.amc_name = amc_name
+                            stats['funds_updated'] += 1
+                        else:
+                            # Create new fund
+                            fund = Fund(
+                                isin=isin,
+                                scheme_name=scheme_name,
+                                fund_type=fund_type,
+                                fund_subtype=fund_subtype,
+                                amc_name=amc_name
+                            )
+                            db.session.add(fund)
+                            stats['funds_created'] += 1
+
+                        # Extract factsheet data
+                        fund_manager = str(row.get('Fund Manager', row.get('Fund Manager(s)', ''))).strip() if not pd.isna(row.get('Fund Manager', row.get('Fund Manager(s)'))) else None
+                        aum = float(row.get('AUM', row.get('AUM (₹ Cr)', 0))) if not pd.isna(row.get('AUM', row.get('AUM (₹ Cr)'))) else None
+                        expense_ratio = float(row.get('Expense Ratio', 0)) if not pd.isna(row.get('Expense Ratio')) else None
+                        launch_date = self._parse_date(row.get('Launch Date'))
+                        exit_load = str(row.get('Exit Load', '')).strip() if not pd.isna(row.get('Exit Load')) else None
+
+                        # Upsert factsheet record
+                        factsheet = FundFactSheet.query.filter_by(isin=isin).first()
+                        if factsheet:
+                            # Update existing factsheet
+                            factsheet.fund_manager = fund_manager
+                            factsheet.aum = aum
+                            factsheet.expense_ratio = expense_ratio
+                            factsheet.launch_date = launch_date
+                            factsheet.exit_load = exit_load
+                            stats['factsheets_updated'] += 1
+                        else:
+                            # Create new factsheet
+                            factsheet = FundFactSheet(
+                                isin=isin,
+                                fund_manager=fund_manager,
+                                aum=aum,
+                                expense_ratio=expense_ratio,
+                                launch_date=launch_date,
+                                exit_load=exit_load
+                            )
+                            db.session.add(factsheet)
+                            stats['factsheets_created'] += 1
+
+                    except Exception as e:
+                        logger.error(f"Error processing row {idx+1}: {e}")
                         continue
 
-                    fund_data = {
-                        'isin': isin,
-                        'scheme_name': str(row.get('Scheme Name', '')).strip(),
-                        'fund_type': str(row.get('Fund Type', row.get('Type', ''))).strip(),
-                        'fund_subtype': str(row.get('Fund Sub Type', row.get('Subtype', ''))).strip() if not pd.isna(row.get('Fund Sub Type', row.get('Subtype'))) else None,
-                        'amc_name': str(row.get('AMC Name', row.get('AMC', ''))).strip(),
-                    }
-
-                    factsheet_data = {
-                        'isin': isin,
-                        'fund_manager': str(row.get('Fund Manager', row.get('Fund Manager(s)', ''))).strip() if not pd.isna(row.get('Fund Manager', row.get('Fund Manager(s)'))) else None,
-                        'aum': float(row.get('AUM', row.get('AUM (₹ Cr)', 0))) if not pd.isna(row.get('AUM', row.get('AUM (₹ Cr)'))) else None,
-                        'expense_ratio': float(row.get('Expense Ratio', 0)) if not pd.isna(row.get('Expense Ratio')) else None,
-                        'launch_date': self._parse_date(row.get('Launch Date')),
-                        'exit_load': str(row.get('Exit Load', '')).strip() if not pd.isna(row.get('Exit Load')) else None,
-                    }
-
-                    fund_records.append(fund_data)
-                    factsheet_records.append(factsheet_data)
-
-                    # Bulk insert in batches
-                    if len(fund_records) >= batch_size:
-                        # Use individual inserts for better compatibility
-                        for fund_data in fund_records:
-                            fund = Fund(**fund_data)
-                            db.session.add(fund)
-                        
-                        for factsheet_data in factsheet_records:
-                            factsheet = FundFactSheet(**factsheet_data)
-                            db.session.add(factsheet)
-                        
-                        db.session.commit()
-                        stats['funds_created'] += len(fund_records)
-                        stats['factsheets_created'] += len(factsheet_records)
-                        stats['batches_processed'] += 1
-                        fund_records.clear()
-                        factsheet_records.clear()
-                        logger.info(f"Batch {stats['batches_processed']} committed")
-
-                except Exception as e:
-                    logger.error(f"Error processing row {idx+1}: {e}")
-                    continue
-
-            # Insert remaining
-            if fund_records:
-                # Use individual inserts for better compatibility
-                for fund_data in fund_records:
-                    fund = Fund(**fund_data)
-                    db.session.add(fund)
-                
-                for factsheet_data in factsheet_records:
-                    factsheet = FundFactSheet(**factsheet_data)
-                    db.session.add(factsheet)
-                
+                # Commit batch
                 db.session.commit()
-                stats['funds_created'] += len(fund_records)
-                stats['factsheets_created'] += len(factsheet_records)
                 stats['batches_processed'] += 1
+                logger.info(f"Completed batch {current_batch}/{total_batches}")
 
-            logger.info(f"Factsheet import completed: {stats}")
+            logger.info(f"Factsheet upsert completed: {stats}")
             return stats
             
         except Exception as e:

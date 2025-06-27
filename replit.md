@@ -171,6 +171,12 @@ The application uses a PostgreSQL database with the following key architectural 
   - Checks fund existence in database before importing holdings
   - Added detailed skip tracking: rows_skipped_invalid_isin, rows_skipped_no_fund
   - Prevents database errors from invalid ISIN references
+- June 27, 2025: Implemented upsert strategy for factsheet imports
+  - Replaced bulk insert approach with individual record upsert logic
+  - Handles both new fund creation and existing fund updates seamlessly
+  - Enhanced clear data functionality with comprehensive warning system
+  - Added confirmation dialog and visual warnings for data clearing operations
+  - Improved batch processing with detailed statistics tracking (created vs updated records)
 
 ## User Preferences
 
