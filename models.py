@@ -281,3 +281,60 @@ class FundStatistics(db.Model):
         CheckConstraint('top_10_holdings_percentage >= 0 AND top_10_holdings_percentage <= 100', name='check_top_10_percentage'),
         CheckConstraint('portfolio_turnover_ratio >= 0', name='check_turnover_positive'),
     )
+
+
+class FundCodeLookup(db.Model):
+    """
+    Code mapping table for mutual funds across different systems
+    Maps ISIN, AMFI Code, BSE Code, and other identifier codes
+    """
+    __tablename__ = 'mf_fund_code_lookup'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    isin = db.Column(db.String(12), db.ForeignKey('mf_fund.isin'), nullable=False)
+    
+    # Standard Codes
+    amfi_code = db.Column(db.String(10), nullable=True, unique=True)  # AMFI scheme code
+    bse_code = db.Column(db.String(10), nullable=True, unique=True)  # BSE scheme code
+    nse_code = db.Column(db.String(10), nullable=True, unique=True)  # NSE scheme code
+    
+    # Exchange Specific Codes
+    bse_symbol = db.Column(db.String(20), nullable=True)  # BSE trading symbol
+    nse_symbol = db.Column(db.String(20), nullable=True)  # NSE trading symbol
+    
+    # Regulatory Codes
+    sebi_code = db.Column(db.String(15), nullable=True)  # SEBI registration code
+    rta_code = db.Column(db.String(15), nullable=True)  # Registrar & Transfer Agent code
+    
+    # Third Party Codes
+    morningstar_id = db.Column(db.String(20), nullable=True)  # Morningstar identifier
+    valueresearch_id = db.Column(db.String(20), nullable=True)  # Value Research identifier
+    crisil_code = db.Column(db.String(15), nullable=True)  # CRISIL code
+    
+    # Alternative Identifiers
+    scheme_code = db.Column(db.String(20), nullable=True)  # Internal scheme code
+    old_isin = db.Column(db.String(12), nullable=True)  # Previous ISIN if changed
+    
+    # Status and Metadata
+    is_active = db.Column(db.Boolean, default=True)  # Whether codes are currently active
+    verification_status = db.Column(db.String(20), default='pending')  # verified, pending, failed
+    verification_date = db.Column(db.Date, nullable=True)  # Date of last verification
+    
+    # Source Information
+    data_source = db.Column(db.String(50), nullable=True)  # Source of code mapping
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship to Fund
+    fund = db.relationship("Fund", backref="code_lookup")
+    
+    __table_args__ = (
+        Index('idx_code_amfi', 'amfi_code'),
+        Index('idx_code_bse', 'bse_code'),
+        Index('idx_code_nse', 'nse_code'),
+        Index('idx_code_sebi', 'sebi_code'),
+        Index('idx_code_active', 'is_active'),
+        Index('idx_code_verification', 'verification_status'),
+        Index('idx_code_morningstar', 'morningstar_id'),
+        Index('idx_code_valueresearch', 'valueresearch_id'),
+    )

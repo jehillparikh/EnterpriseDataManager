@@ -10,6 +10,7 @@ Current Models (Completed):
 ✓ FundRating - Fund ratings from various agencies with Devmani recommendation flag
 ✓ FundAnalytics - Advanced analytics and risk metrics
 ✓ FundStatistics - Statistical data and portfolio composition metrics
+✓ FundCodeLookup - Code mapping between ISIN, AMFI, BSE, NSE and other identifiers
 
 Models To Be Added:
 ==================
