@@ -355,13 +355,26 @@ class FundDataImporter:
                 raise ValueError(
                     f"Missing required columns: {missing_columns}")
 
-            # Get unique scheme ISINs for mapping
-            scheme_isins = df['Scheme ISIN'].unique().tolist()
+            # Get unique scheme ISINs for mapping and filter out invalid values
+            raw_scheme_isins = df['Scheme ISIN'].unique().tolist()
 
-            scheme_isins = [
-                str(i).strip() for i in scheme_isins
-                if isinstance(i, str) and i.strip() not in ('', '-', 'nan')
-            ]
+            # Filter out invalid ISINs (NaN, empty, non-string, or not 12 characters)
+            valid_scheme_isins = []
+            for isin in raw_scheme_isins:
+                # Skip NaN values
+                if pd.isna(isin):
+                    continue
+                # Convert to string and strip whitespace
+                isin_str = str(isin).strip()
+                # Skip empty, dash, or invalid values
+                if not isin_str or isin_str in ('-', 'nan', 'None'):
+                    continue
+                # Only include 12-character ISINs
+                if len(isin_str) == 12:
+                    valid_scheme_isins.append(isin_str)
+            
+            scheme_isins = valid_scheme_isins
+            logger.info(f"Filtered {len(raw_scheme_isins)} ISINs down to {len(scheme_isins)} valid ISINs")
 
             # Track statistics
             stats = {
