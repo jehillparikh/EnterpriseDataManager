@@ -373,7 +373,7 @@ class PortfolioService:
         FundService.get_fund(isin)
         
         try:
-            holding = PortfolioHolding(
+            holding = FundHolding(
                 isin=isin,
                 instrument_isin=instrument_isin,
                 coupon=coupon,
@@ -401,12 +401,12 @@ class PortfolioService:
             holding_id (int): Holding ID
             
         Returns:
-            PortfolioHolding: The requested holding
+            FundHolding: The requested holding
             
         Raises:
             ResourceNotFoundError: If holding does not exist
         """
-        holding = PortfolioHolding.query.get(holding_id)
+        holding = FundHolding.query.get(holding_id)
         if not holding:
             raise ResourceNotFoundError(f"Portfolio holding with ID {holding_id} not found")
         return holding
@@ -428,7 +428,7 @@ class PortfolioService:
         # Ensure fund exists
         FundService.get_fund(isin)
         
-        return PortfolioHolding.query.filter_by(isin=isin).all()
+        return FundHolding.query.filter_by(isin=isin).all()
     
     @staticmethod
     def update_holding(holding_id, **kwargs):
@@ -440,7 +440,7 @@ class PortfolioService:
             **kwargs: Fields to update
             
         Returns:
-            PortfolioHolding: The updated holding
+            FundHolding: The updated holding
             
         Raises:
             ResourceNotFoundError: If holding does not exist
@@ -483,7 +483,7 @@ class PortfolioService:
         # Ensure fund exists
         FundService.get_fund(isin)
         
-        PortfolioHolding.query.filter_by(isin=isin).delete()
+        FundHolding.query.filter_by(isin=isin).delete()
         db.session.commit()
 
 class NavHistoryService:

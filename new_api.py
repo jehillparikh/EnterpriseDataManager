@@ -40,7 +40,7 @@ class ReturnsSchema(Schema):
     return_3y = fields.Float(validate=validate.Range(min=-100))
     return_5y = fields.Float(validate=validate.Range(min=-100))
 
-class PortfolioHoldingSchema(Schema):
+class FundHoldingSchema(Schema):
     """Schema for portfolio holding validation"""
     isin = fields.String(required=True, validate=validate.Length(equal=12))
     instrument_isin = fields.String(validate=validate.Length(equal=12))
@@ -63,7 +63,7 @@ class NavHistorySchema(Schema):
 fund_schema = FundSchema()
 factsheet_schema = FactSheetSchema()
 returns_schema = ReturnsSchema()
-portfolio_holding_schema = PortfolioHoldingSchema()
+fund_holding_schema = FundHoldingSchema()
 nav_history_schema = NavHistorySchema()
 
 # Global error handler
