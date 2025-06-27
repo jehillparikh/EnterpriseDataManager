@@ -63,24 +63,18 @@ def create_app():
                 logger.error("1. IP whitelist restrictions in Google Cloud SQL")
                 logger.error("2. Firewall settings blocking port 5432")
                 logger.error("3. Network connectivity issues")
-                logger.info("Falling back to default database connection")
-                database_uri = None
+                logger.error("Please fix the Google Cloud SQL connection issue before proceeding")
+                raise RuntimeError(f"Cannot connect to Google Cloud SQL: {conn_error}")
                 
         except Exception as e:
             logger.error(f"Invalid Google Cloud database URL format: {e}")
             logger.error("The connection string should be in format: postgresql://username:password@host:port/database")
             logger.error("For Google Cloud SQL, use the public IP address, not the connection name")
-            logger.info("Falling back to default database connection")
-            database_uri = None
-    
-    if not database_uri:
-        # Fallback to other database URLs
-        database_uri = os.environ.get('DATABASE_URL') or os.environ.get('SQLALCHEMY_DATABASE_URI')
-        if database_uri:
-            logger.info("Using fallback database connection")
-        else:
-            logger.error("No valid database connection string found!")
-            raise ValueError("Database connection string required")
+            raise ValueError(f"Invalid Google Cloud SQL database URL: {e}")
+    else:
+        logger.error("Google Cloud SQL database URL not found in environment variables")
+        logger.error("Please set GOOGLE_CLOUD_DATABASE_URL environment variable")
+        raise ValueError("Google Cloud SQL database connection required")
     
     # Set this in the environment in case any other modules need it
     os.environ['SQLALCHEMY_DATABASE_URI'] = database_uri

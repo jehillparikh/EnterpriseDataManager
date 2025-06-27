@@ -132,6 +132,14 @@ The application uses a PostgreSQL database with the following key architectural 
   - Updated to use new column structure with Scheme ISIN for fund linking
   - Added support for columns: Name of Instrument, ISIN, Coupon, Industry, Quantity, Market Value, % to Net Assets, Yield, Type, AMC, Scheme Name, Scheme ISIN
   - Improved fund matching accuracy using direct ISIN lookup
+- June 27, 2025: Completed PortfolioHolding to FundHolding model migration
+  - Renamed model to better reflect fund holdings vs future user portfolios
+  - Updated all references across services, APIs, and data import functionality
+  - Added robust ISIN validation to skip invalid/NaN values in portfolio uploads
+- June 27, 2025: Removed fallback database logic
+  - Application now requires Google Cloud SQL connection to operate
+  - Removed all fallback to local database functionality per user preference
+  - Enhanced error handling to stop application if Google Cloud SQL connection fails
 
 ## User Preferences
 
