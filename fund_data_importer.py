@@ -116,13 +116,12 @@ class FundDataImporter:
                     
                     if not fund:
                         # Create new fund
-                        fund = Fund(
-                            isin=isin,
-                            scheme_name=scheme_name,
-                            fund_type=fund_type,
-                            fund_subtype=fund_subtype,
-                            amc_name=amc_name
-                        )
+                        fund = Fund()
+                        fund.isin = isin
+                        fund.scheme_name = scheme_name
+                        fund.fund_type = fund_type
+                        fund.fund_subtype = fund_subtype
+                        fund.amc_name = amc_name
                         db.session.add(fund)
                         stats['funds_created'] += 1
                     else:
@@ -141,14 +140,13 @@ class FundDataImporter:
                     
                     if not factsheet:
                         # Create new factsheet
-                        factsheet = FundFactSheet(
-                            isin=isin,
-                            fund_manager=str(row.get('Fund Manager', row.get('Fund Manager(s)', ''))).strip() if not pd.isna(row.get('Fund Manager', row.get('Fund Manager(s)'))) else None,
-                            aum=float(row.get('AUM', row.get('AUM (₹ Cr)', 0))) if not pd.isna(row.get('AUM', row.get('AUM (₹ Cr)'))) else None,
-                            expense_ratio=float(row.get('Expense Ratio', 0)) if not pd.isna(row.get('Expense Ratio')) else None,
-                            launch_date=launch_date,
-                            exit_load=str(row.get('Exit Load', '')).strip() if not pd.isna(row.get('Exit Load')) else None
-                        )
+                        factsheet = FundFactSheet()
+                        factsheet.isin = isin
+                        factsheet.fund_manager = str(row.get('Fund Manager', row.get('Fund Manager(s)', ''))).strip() if not pd.isna(row.get('Fund Manager', row.get('Fund Manager(s)'))) else None
+                        factsheet.aum = float(row.get('AUM', row.get('AUM (₹ Cr)', 0))) if not pd.isna(row.get('AUM', row.get('AUM (₹ Cr)'))) else None
+                        factsheet.expense_ratio = float(row.get('Expense Ratio', 0)) if not pd.isna(row.get('Expense Ratio')) else None
+                        factsheet.launch_date = launch_date
+                        factsheet.exit_load = str(row.get('Exit Load', '')).strip() if not pd.isna(row.get('Exit Load')) else None
                         db.session.add(factsheet)
                         stats['factsheets_created'] += 1
                     else:
@@ -240,16 +238,15 @@ class FundDataImporter:
                 
                 if not returns:
                     # Create new returns record
-                    returns = FundReturns(
-                        isin=isin,
-                        return_1m=float(row.get('1M Return', 0)) if not pd.isna(row.get('1M Return')) else None,
-                        return_3m=float(row.get('3M Return', 0)) if not pd.isna(row.get('3M Return')) else None,
-                        return_6m=float(row.get('6M Return', 0)) if not pd.isna(row.get('6M Return')) else None,
-                        return_ytd=float(row.get('YTD Return', 0)) if not pd.isna(row.get('YTD Return')) else None,
-                        return_1y=float(row.get('1Y Return', 0)) if not pd.isna(row.get('1Y Return')) else None,
-                        return_3y=float(row.get('3Y Return', 0)) if not pd.isna(row.get('3Y Return')) else None,
-                        return_5y=float(row.get('5Y Return', 0)) if not pd.isna(row.get('5Y Return')) else None
-                    )
+                    returns = FundReturns()
+                    returns.isin = isin
+                    returns.return_1m = float(row.get('1M Return', 0)) if not pd.isna(row.get('1M Return')) else None
+                    returns.return_3m = float(row.get('3M Return', 0)) if not pd.isna(row.get('3M Return')) else None
+                    returns.return_6m = float(row.get('6M Return', 0)) if not pd.isna(row.get('6M Return')) else None
+                    returns.return_ytd = float(row.get('YTD Return', 0)) if not pd.isna(row.get('YTD Return')) else None
+                    returns.return_1y = float(row.get('1Y Return', 0)) if not pd.isna(row.get('1Y Return')) else None
+                    returns.return_3y = float(row.get('3Y Return', 0)) if not pd.isna(row.get('3Y Return')) else None
+                    returns.return_5y = float(row.get('5Y Return', 0)) if not pd.isna(row.get('5Y Return')) else None
                     db.session.add(returns)
                     stats['returns_created'] += 1
                 else:
@@ -307,20 +304,19 @@ class FundDataImporter:
                     if not scheme_isin or scheme_isin.lower() == 'nan':
                         continue
                     
-                    holding = FundHolding(
-                        isin=scheme_isin,
-                        instrument_isin=str(row.get('ISIN', '')) if not pd.isna(row.get('ISIN')) else None,
-                        instrument_name=str(row.get('Name of Instrument', '')),
-                        sector=str(row.get('Industry', '')) if not pd.isna(row.get('Industry')) else None,
-                        quantity=float(row.get('Quantity', 0)) if not pd.isna(row.get('Quantity')) else None,
-                        value=float(row.get('Market Value', 0)) if not pd.isna(row.get('Market Value')) else None,
-                        percentage_to_nav=float(row.get('% to Net Assets', 0)) if not pd.isna(row.get('% to Net Assets')) else 0,
-                        yield_value=float(row.get('Yield', 0)) if not pd.isna(row.get('Yield')) else None,
-                        instrument_type=str(row.get('Type', '')),
-                        coupon=float(row.get('Coupon', 0)) if not pd.isna(row.get('Coupon')) else None,
-                        amc_name=str(row.get('AMC', '')) if not pd.isna(row.get('AMC')) else None,
-                        scheme_name=str(row.get('Scheme Name', '')) if not pd.isna(row.get('Scheme Name')) else None
-                    )
+                    holding = FundHolding()
+                    holding.isin = scheme_isin
+                    holding.instrument_isin = str(row.get('ISIN', '')) if not pd.isna(row.get('ISIN')) else None
+                    holding.instrument_name = str(row.get('Name of Instrument', ''))
+                    holding.sector = str(row.get('Industry', '')) if not pd.isna(row.get('Industry')) else None
+                    holding.quantity = float(row.get('Quantity', 0)) if not pd.isna(row.get('Quantity')) else None
+                    holding.value = float(row.get('Market Value', 0)) if not pd.isna(row.get('Market Value')) else None
+                    holding.percentage_to_nav = float(row.get('% to Net Assets', 0)) if not pd.isna(row.get('% to Net Assets')) else 0
+                    holding.yield_value = float(row.get('Yield', 0)) if not pd.isna(row.get('Yield')) else None
+                    holding.instrument_type = str(row.get('Type', ''))
+                    holding.coupon = float(row.get('Coupon', 0)) if not pd.isna(row.get('Coupon')) else None
+                    holding.amc_name = str(row.get('AMC', '')) if not pd.isna(row.get('AMC')) else None
+                    holding.scheme_name = str(row.get('Scheme Name', '')) if not pd.isna(row.get('Scheme Name')) else None
                     
                     db.session.add(holding)
                     stats['holdings_created'] += 1
@@ -391,11 +387,10 @@ class FundDataImporter:
                     if nav_value is None:
                         continue
                     
-                    nav_record = NavHistory(
-                        isin=isin,
-                        date=nav_date,
-                        nav=nav_value
-                    )
+                    nav_record = NavHistory()
+                    nav_record.isin = isin
+                    nav_record.date = nav_date
+                    nav_record.nav = nav_value
                     
                     db.session.add(nav_record)
                     stats['nav_records_created'] += 1
