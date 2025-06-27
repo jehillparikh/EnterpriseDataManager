@@ -316,8 +316,13 @@ class FundDataImporter:
             if missing_columns:
                 raise ValueError(f"Missing required columns: {missing_columns}")
             
-            # Get unique scheme ISINs for mapping
-            scheme_isins = df['Scheme ISIN'].unique().tolist()
+            # Get unique scheme ISINs for mapping, filtering out invalid values
+            scheme_isins = []
+            for isin in df['Scheme ISIN'].unique():
+                if pd.notna(isin) and str(isin).strip() not in ['', '-', 'nan']:
+                    clean_isin = str(isin).strip()
+                    if len(clean_isin) == 12 and clean_isin.isalnum():  # Basic ISIN validation
+                        scheme_isins.append(clean_isin)
             
             # Track statistics
             stats = {
@@ -362,7 +367,17 @@ class FundDataImporter:
             # Process each row
             for _, row in df.iterrows():
                 stats['rows_processed'] += 1
-                scheme_isin = str(row['Scheme ISIN']).strip()
+                
+                # Clean and validate scheme ISIN
+                raw_isin = row['Scheme ISIN']
+                if pd.isna(raw_isin) or str(raw_isin).strip() in ['', '-', 'nan']:
+                    logger.warning(f"Skipping row with invalid Scheme ISIN: {raw_isin}")
+                    continue
+                    
+                scheme_isin = str(raw_isin).strip()
+                if len(scheme_isin) != 12 or not scheme_isin.isalnum():
+                    logger.warning(f"Skipping row with invalid Scheme ISIN format: {scheme_isin}")
+                    continue
                 
                 # Skip if fund not found in our database
                 if scheme_isin not in existing_isins:

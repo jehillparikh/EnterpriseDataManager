@@ -421,7 +421,7 @@ def create_holding(isin):
         
         # Add isin to data before validation
         data['isin'] = isin
-        validated_data = portfolio_holding_schema.load(data)
+        validated_data = fund_holding_schema.load(data)
         
         holding = PortfolioService.create_holding(
             isin=validated_data['isin'],
@@ -484,7 +484,7 @@ def update_holding(holding_id):
         if not data:
             return jsonify({"error": "No input data provided"}), 400
         
-        validated_data = portfolio_holding_schema.load(data, partial=True)
+        validated_data = fund_holding_schema.load(data, partial=True)
         
         # Remove isin from kwargs for update
         validated_data.pop('isin', None)
