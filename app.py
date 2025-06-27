@@ -18,7 +18,7 @@ def init_app():
     # Create database tables
     with app.app_context():
         # Import models after app context is established
-        from new_models_updated import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory
+        from models import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory
         
         # Instead of dropping tables, we'll try to create them if they don't exist
         # This allows us to work with existing tables that might have dependencies

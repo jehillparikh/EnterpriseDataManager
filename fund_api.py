@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from new_models_updated import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory
+from models import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory
 from setup_db import db
 import logging
 

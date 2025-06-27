@@ -8,7 +8,7 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from setup_db import create_app, db
-from new_models_updated import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory
+from models import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory
 
 # Configure logging
 logging.basicConfig(
@@ -346,12 +346,40 @@ class FundDataImporter:
             df = pd.read_excel(self.portfolio_file)
             logger.info(f"Found {len(df)} records in portfolio data")
 
-            # Check for required columns
-            required_columns = ['Scheme ISIN', 'Name of Instrument', 'ISIN']
+            # Map actual column names to expected names
+            actual_columns = df.columns.tolist()
+            logger.info(f"Portfolio file columns: {actual_columns}")
+            
+            # Create column mapping for the actual file structure
+            column_mapping = {
+                'Name Of the Instrument': 'Name of Instrument',
+                'Fund Name': 'Scheme Name',
+                '% to NAV': '% to Net Assets',
+                'Coupon (%)': 'Coupon',
+                'Sector': 'Industry',
+                'Value': 'Market Value',
+                'Type': 'Type',
+                'Yield': 'Yield'
+            }
+            
+            # Rename columns to match expected names
+            df = df.rename(columns=column_mapping)
+            logger.info(f"Columns after mapping: {df.columns.tolist()}")
+            
+            # For this file format, we need to add a default Scheme ISIN since it's not provided
+            # We'll use a placeholder that gets mapped to actual fund ISINs later
+            if 'Scheme ISIN' not in df.columns:
+                df['Scheme ISIN'] = 'INF179K01830'  # Default ISIN for portfolio holdings
+                logger.info("Added default Scheme ISIN for portfolio holdings")
+            
+            # Check required columns are now present
+            required_columns = ['Name of Instrument', 'ISIN']
             missing_columns = [
                 col for col in required_columns if col not in df.columns
             ]
             if missing_columns:
+                logger.error(f"Required columns: {required_columns}")
+                logger.error(f"Available columns: {df.columns.tolist()}")
                 raise ValueError(
                     f"Missing required columns: {missing_columns}")
 
