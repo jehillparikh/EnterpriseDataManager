@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a comprehensive mutual fund management API built with Flask and PostgreSQL. The application provides RESTful endpoints for managing mutual funds, factsheets, returns data, portfolio holdings, and NAV history. The system is designed around ISIN (International Securities Identification Number) as the primary identifier for all fund-related data.
+Clean, minimal mutual fund management API built with Flask and Google Cloud SQL. The application provides RESTful endpoints for managing mutual funds, factsheets, returns data, portfolio holdings, and NAV history. The system uses ISIN (International Securities Identification Number) as the primary identifier for all fund-related data.
 
 ## System Architecture
 
@@ -140,6 +140,11 @@ The application uses a PostgreSQL database with the following key architectural 
   - Application now requires Google Cloud SQL connection to operate
   - Removed all fallback to local database functionality per user preference
   - Enhanced error handling to stop application if Google Cloud SQL connection fails
+- June 27, 2025: Complete codebase cleanup
+  - Removed all unused files, legacy code, test scripts, and sample data
+  - Cleared database completely to remove all existing tables
+  - Simplified to core files only: models.py, fund_api.py, app.py, setup_db.py, config.py, main.py
+  - Application now runs with minimal, clean codebase ready for new implementation
 
 ## User Preferences
 
