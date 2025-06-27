@@ -228,10 +228,18 @@ Select an endpoint above to see the API response...
                                 </div>
                             </div>
 
-                            <div class="mt-4">
+                            <div class="mt-4 d-flex gap-3 align-items-center">
                                 <button class="btn btn-primary btn-lg" id="upload-button" disabled onclick="uploadAndStoreFile()">
                                     <i class="fas fa-upload me-2"></i>Upload to Server and Store to Database
                                 </button>
+                                <button class="btn btn-outline-danger" onclick="clearTempFolder()">
+                                    <i class="fas fa-trash me-2"></i>Clear Temp Folder
+                                </button>
+                            </div>
+                            
+                            <div class="alert alert-info mt-3" id="temp-file-notification" style="display: none;">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <span id="temp-file-message"></span>
                             </div>
                             
                             <div class="progress mt-3" id="upload-progress" style="display: none;">
@@ -239,6 +247,21 @@ Select an endpoint above to see the API response...
                             </div>
                             
                             <div id="upload-result" class="mt-3"></div>
+                        </div>
+                    </div>
+
+                    <!-- Console Output -->
+                    <div class="card mt-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">📟 Console Output</h5>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="clearConsole()">
+                                <i class="fas fa-broom me-1"></i>Clear Console
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="console-output" class="bg-dark text-light p-3 rounded" style="height: 300px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 12px;">
+                                <div class="text-muted">Console ready... Upload files to see processing logs.</div>
+                            </div>
                         </div>
                     </div>
 
@@ -252,6 +275,7 @@ Select an endpoint above to see the API response...
                                     <li>Factsheet data should be uploaded first as it creates the base fund records</li>
                                     <li>Check "Clear existing data" to replace current data with the new upload</li>
                                     <li>For NAV files, adjust batch size if needed for large datasets</li>
+                                    <li>Files are temporarily stored in temp folder during processing</li>
                                 </ul>
                             </div>
                         </div>
@@ -307,6 +331,18 @@ Select an endpoint above to see the API response...
                 return;
             }
 
+            // Show temp file notification
+            const tempNotification = document.getElementById('temp-file-notification');
+            const tempMessage = document.getElementById('temp-file-message');
+            const tempFileName = `${fileType}_${Date.now()}_${file.name}`;
+            
+            tempMessage.textContent = `File saved to temp folder as: ${tempFileName}`;
+            tempNotification.style.display = 'block';
+
+            // Add to console
+            addToConsole(`[${new Date().toLocaleTimeString()}] Starting upload: ${file.name} (${fileType})`);
+            addToConsole(`[${new Date().toLocaleTimeString()}] File saved to temp folder as: ${tempFileName}`);
+
             // Show progress and disable button
             progressDiv.style.display = 'block';
             resultDiv.innerHTML = '';
@@ -317,10 +353,13 @@ Select an endpoint above to see the API response...
             formData.append('file', file);
             formData.append('file_type', fileType);
             formData.append('clear_existing', clearExisting.checked);
+            formData.append('temp_filename', tempFileName);
             
             if (fileType === 'nav') {
                 formData.append('batch_size', batchSize.value);
             }
+
+            addToConsole(`[${new Date().toLocaleTimeString()}] Processing file and importing to database...`);
 
             // Upload to server and store to database
             fetch('/api/upload', {
@@ -333,6 +372,7 @@ Select an endpoint above to see the API response...
                 uploadButton.disabled = false;
 
                 if (data.error) {
+                    addToConsole(`[${new Date().toLocaleTimeString()}] ERROR: ${data.error}`, 'error');
                     resultDiv.innerHTML = `
                         <div class="alert alert-danger">
                             <h5><i class="fas fa-exclamation-triangle me-2"></i>Upload Failed</h5>
@@ -340,6 +380,14 @@ Select an endpoint above to see the API response...
                         </div>
                     `;
                 } else {
+                    addToConsole(`[${new Date().toLocaleTimeString()}] SUCCESS: ${data.message}`, 'success');
+                    
+                    if (data.stats) {
+                        for (const [key, value] of Object.entries(data.stats)) {
+                            addToConsole(`[${new Date().toLocaleTimeString()}] ${key.replace(/_/g, ' ')}: ${value}`);
+                        }
+                    }
+
                     let statsHtml = '';
                     if (data.stats) {
                         statsHtml = '<div class="mt-3"><strong>Import Statistics:</strong><ul class="mb-0">';
@@ -367,11 +415,17 @@ Select an endpoint above to see the API response...
                     clearExisting.checked = false;
                     document.getElementById('batch-size-container').style.display = 'none';
                     uploadButton.disabled = true;
+                    
+                    // Hide temp notification after success
+                    setTimeout(() => {
+                        tempNotification.style.display = 'none';
+                    }, 3000);
                 }
             })
             .catch(error => {
                 progressDiv.style.display = 'none';
                 uploadButton.disabled = false;
+                addToConsole(`[${new Date().toLocaleTimeString()}] NETWORK ERROR: ${error.message}`, 'error');
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
                         <h5><i class="fas fa-times-circle me-2"></i>Upload Error</h5>
@@ -379,6 +433,52 @@ Select an endpoint above to see the API response...
                     </div>
                 `;
             });
+        }
+
+        function clearTempFolder() {
+            if (confirm('This will clear all temporary files. Continue?')) {
+                addToConsole(`[${new Date().toLocaleTimeString()}] Clearing temp folder...`);
+                
+                fetch('/api/upload/clear-temp', { 
+                    method: 'POST' 
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        addToConsole(`[${new Date().toLocaleTimeString()}] ERROR: ${data.error}`, 'error');
+                        alert('Error clearing temp folder: ' + data.error);
+                    } else {
+                        addToConsole(`[${new Date().toLocaleTimeString()}] SUCCESS: ${data.message}`, 'success');
+                        alert(data.message || 'Temp folder cleared successfully');
+                        document.getElementById('temp-file-notification').style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    addToConsole(`[${new Date().toLocaleTimeString()}] ERROR: ${error.message}`, 'error');
+                    alert('Error clearing temp folder: ' + error.message);
+                });
+            }
+        }
+
+        function addToConsole(message, type = 'info') {
+            const consoleOutput = document.getElementById('console-output');
+            const messageDiv = document.createElement('div');
+            
+            let className = '';
+            if (type === 'error') className = 'text-danger';
+            else if (type === 'success') className = 'text-success';
+            else if (type === 'warning') className = 'text-warning';
+            
+            messageDiv.className = className;
+            messageDiv.textContent = message;
+            
+            consoleOutput.appendChild(messageDiv);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        function clearConsole() {
+            const consoleOutput = document.getElementById('console-output');
+            consoleOutput.innerHTML = '<div class="text-muted">Console cleared.</div>';
         }
 
         // API Testing Functions

@@ -286,6 +286,48 @@ def import_nav_data(df, clear_existing, batch_size):
         'batch_size_used': batch_size
     }
 
+@upload_bp.route('/api/upload/clear-temp', methods=['POST'])
+def clear_temp_folder():
+    """Clear temporary files"""
+    try:
+        import tempfile
+        import shutil
+        import glob
+        
+        temp_dir = tempfile.gettempdir()
+        pattern = os.path.join(temp_dir, '*_*_*.xlsx')
+        pattern2 = os.path.join(temp_dir, '*_*_*.xls')
+        
+        files_removed = 0
+        
+        # Remove xlsx files
+        for file_path in glob.glob(pattern):
+            try:
+                os.remove(file_path)
+                files_removed += 1
+                logger.info(f"Removed temp file: {file_path}")
+            except Exception as e:
+                logger.error(f"Error removing {file_path}: {e}")
+        
+        # Remove xls files
+        for file_path in glob.glob(pattern2):
+            try:
+                os.remove(file_path)
+                files_removed += 1
+                logger.info(f"Removed temp file: {file_path}")
+            except Exception as e:
+                logger.error(f"Error removing {file_path}: {e}")
+        
+        return jsonify({
+            'message': f'Temp folder cleared successfully. Removed {files_removed} files.',
+            'files_removed': files_removed
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error clearing temp folder: {e}")
+        return jsonify({'error': f'Error clearing temp folder: {str(e)}'}), 500
+
+
 def init_upload_routes(app):
     """Initialize upload routes"""
     app.register_blueprint(upload_bp)

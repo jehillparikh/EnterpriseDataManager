@@ -151,6 +151,13 @@ The application uses a PostgreSQL database with the following key architectural 
   - Implemented four-flow data upload system: Factsheet → Portfolio → Returns → NAV
   - Added two-step upload process: store file then import to database
   - Database completely cleared and ready for fresh data uploads
+- June 27, 2025: Simplified upload interface with enhanced features
+  - Removed duplicate frontend files causing confusion
+  - Created single dropdown interface: Factsheet, Fund Holdings, Returns, NAV
+  - Added single "Upload to Server and Store to Database" button for direct import
+  - Implemented temp folder management with file name notifications
+  - Added real-time console output display with color-coded messages
+  - Added "Clear Temp Folder" functionality for file cleanup
 
 ## User Preferences
 
