@@ -1,0 +1,80 @@
+def import_factsheet_data(self, df, clear_existing=False, batch_size=1000):
+    logger.info(f"Importing factsheet data with {len(df)} records")
+
+    try:
+        df = df.dropna(subset=['ISIN'])
+        logger.info(f"{len(df)} valid ISINs after cleaning")
+
+        if clear_existing and not df.empty:
+            isins = df['ISIN'].unique().tolist()
+            FundFactSheet.query.filter(FundFactSheet.isin.in_(isins)).delete(synchronize_session=False)
+            Fund.query.filter(Fund.isin.in_(isins)).delete(synchronize_session=False)
+            db.session.commit()
+            logger.info(f"Cleared existing records for {len(isins)} ISINs")
+
+        stats = {
+            'funds_created': 0,
+            'factsheets_created': 0,
+            'total_rows_processed': len(df),
+            'batches_processed': 0
+        }
+
+        fund_records, factsheet_records = [], []
+        for idx, row in df.iterrows():
+            try:
+                isin = str(row.get('ISIN', '')).strip()
+                if not isin or isin.lower() == 'nan':
+                    continue
+
+                fund_data = {
+                    'isin': isin,
+                    'scheme_name': str(row.get('Scheme Name', '')).strip(),
+                    'fund_type': str(row.get('Fund Type', row.get('Type', ''))).strip(),
+                    'fund_subtype': str(row.get('Fund Sub Type', row.get('Subtype', ''))).strip() if not pd.isna(row.get('Fund Sub Type', row.get('Subtype'))) else None,
+                    'amc_name': str(row.get('AMC Name', row.get('AMC', ''))).strip(),
+                }
+
+                factsheet_data = {
+                    'isin': isin,
+                    'fund_manager': str(row.get('Fund Manager', row.get('Fund Manager(s)', ''))).strip() if not pd.isna(row.get('Fund Manager', row.get('Fund Manager(s)'))) else None,
+                    'aum': float(row.get('AUM', row.get('AUM (₹ Cr)', 0))) if not pd.isna(row.get('AUM', row.get('AUM (₹ Cr)'))) else None,
+                    'expense_ratio': float(row.get('Expense Ratio', 0)) if not pd.isna(row.get('Expense Ratio')) else None,
+                    'launch_date': self._parse_date(row.get('Launch Date')),
+                    'exit_load': str(row.get('Exit Load', '')).strip() if not pd.isna(row.get('Exit Load')) else None,
+                }
+
+                fund_records.append(fund_data)
+                factsheet_records.append(factsheet_data)
+
+                # Bulk insert in batches
+                if len(fund_records) >= batch_size:
+                    db.session.bulk_insert_mappings(Fund, fund_records)
+                    db.session.bulk_insert_mappings(FundFactSheet, factsheet_records)
+                    db.session.commit()
+                    stats['funds_created'] += len(fund_records)
+                    stats['factsheets_created'] += len(factsheet_records)
+                    stats['batches_processed'] += 1
+                    fund_records.clear()
+                    factsheet_records.clear()
+                    logger.info(f"Batch {stats['batches_processed']} committed")
+
+            except Exception as e:
+                logger.error(f"Error processing row {idx+1}: {e}")
+                continue
+
+        # Insert remaining
+        if fund_records:
+            db.session.bulk_insert_mappings(Fund, fund_records)
+            db.session.bulk_insert_mappings(FundFactSheet, factsheet_records)
+            db.session.commit()
+            stats['funds_created'] += len(fund_records)
+            stats['factsheets_created'] += len(factsheet_records)
+            stats['batches_processed'] += 1
+
+        logger.info(f"Factsheet import completed: {stats}")
+        return stats
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error importing factsheet data: {e}")
+        raise
