@@ -128,6 +128,10 @@ The application uses a PostgreSQL database with the following key architectural 
   - Created mutualfundpro database in Google Cloud SQL instance
   - Successfully established live connection to Google Cloud SQL
   - Application now fully operational on Google Cloud infrastructure
+- June 27, 2025: Enhanced portfolio upload system
+  - Updated to use new column structure with Scheme ISIN for fund linking
+  - Added support for columns: Name of Instrument, ISIN, Coupon, Industry, Quantity, Market Value, % to Net Assets, Yield, Type, AMC, Scheme Name, Scheme ISIN
+  - Improved fund matching accuracy using direct ISIN lookup
 
 ## User Preferences
 

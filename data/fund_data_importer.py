@@ -293,7 +293,9 @@ class FundDataImporter:
     
     def import_portfolio_data(self, clear_existing=False):
         """
-        Import fund portfolio holdings from mutual_portfolio_testdata.xlsx
+        Import fund portfolio holdings using Scheme ISIN for fund linking
+        Expected columns: Name of Instrument, ISIN, Coupon, Industry, Quantity, 
+        Market Value, % to Net Assets, Yield, Type, AMC, Scheme Name, Scheme ISIN
         
         Args:
             clear_existing (bool): Whether to clear existing data before import
@@ -307,97 +309,91 @@ class FundDataImporter:
             # Read Excel file
             df = pd.read_excel(self.portfolio_file)
             logger.info(f"Found {len(df)} records in portfolio data")
-
-
-            if "Scheme Name" in df.columns:
-                df = df.rename(columns={"Scheme Name": "Fund Name"})
             
-            # Get unique fund names for mapping
-            fund_names = df['Fund Name'].unique().tolist()
+            # Check for required columns
+            required_columns = ['Scheme ISIN', 'Name of Instrument', 'ISIN']
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                raise ValueError(f"Missing required columns: {missing_columns}")
+            
+            # Get unique scheme ISINs for mapping
+            scheme_isins = df['Scheme ISIN'].unique().tolist()
             
             # Track statistics
             stats = {
                 'holdings_created': 0,
                 'funds_matched': 0,
-                'funds_not_found': 0
+                'funds_not_found': 0,
+                'rows_processed': 0
             }
             
             # Clear existing holdings if requested
-            if clear_existing:
-                # Get all funds with names matching the ones in the Excel file
-                funds_to_clear = Fund.query.filter(
-                    Fund.scheme_name.in_([f"%{name}%" for name in fund_names])
-                ).all()
+            if clear_existing and scheme_isins:
+                # Delete existing holdings for these scheme ISINs
+                deleted = PortfolioHolding.query.filter(
+                    PortfolioHolding.isin.in_(scheme_isins)
+                ).delete(synchronize_session=False)
                 
-                fund_isins = [fund.isin for fund in funds_to_clear]
-                
-                if fund_isins:
-                    # Delete holdings for these funds
-                    deleted = PortfolioHolding.query.filter(
-                        PortfolioHolding.isin.in_(fund_isins)
-                    ).delete(synchronize_session=False)
-                    
-                    db.session.commit()
-                    logger.info(f"Cleared {deleted} existing portfolio holdings for {len(fund_isins)} funds")
+                db.session.commit()
+                logger.info(f"Cleared {deleted} existing portfolio holdings for {len(scheme_isins)} funds")
             
-            # Create a mapping between fund names in Excel and actual fund ISINs in the database
-            fund_name_to_isin = {}
-            for fund_name in fund_names:
-                # Find matching fund by scheme name
-                fund = Fund.query.filter(Fund.scheme_name.like(f"%{fund_name}%")).first()
-                if fund:
-                    fund_name_to_isin[fund_name] = fund.isin
-                    stats['funds_matched'] += 1
-                else:
-                    stats['funds_not_found'] += 1
-                    logger.warning(f"No matching fund found for '{fund_name}'")
+            # Verify which scheme ISINs exist in our Fund table
+            existing_funds = Fund.query.filter(Fund.isin.in_(scheme_isins)).all()
+            existing_isins = {fund.isin for fund in existing_funds}
+            
+            logger.info(f"Found {len(existing_isins)} matching funds out of {len(scheme_isins)} scheme ISINs")
+            
+            # Helper function to safely convert to float
+            def safe_float(val):
+                if pd.isna(val):
+                    return None
+                try:
+                    # Remove any non-numeric characters except decimal points and minus signs
+                    if isinstance(val, str):
+                        # Replace @ symbols and other invalid chars with empty string
+                        cleaned = ''.join(c for c in val if c.isdigit() or c in '.-')
+                        if not cleaned or cleaned in ['.', '-', '.-']:
+                            return None
+                        return float(cleaned)
+                    return float(val)
+                except (ValueError, TypeError):
+                    return None
             
             # Process each row
             for _, row in df.iterrows():
-                fund_name = row['Fund Name']
+                stats['rows_processed'] += 1
+                scheme_isin = str(row['Scheme ISIN']).strip()
                 
-                # Skip if fund not found in our mapping
-                if fund_name not in fund_name_to_isin:
+                # Skip if fund not found in our database
+                if scheme_isin not in existing_isins:
+                    if scheme_isin not in [isin for isin in scheme_isins if isin in existing_isins]:
+                        stats['funds_not_found'] += 1
+                        logger.warning(f"Fund with Scheme ISIN {scheme_isin} not found in database")
                     continue
                 
-                # Get the fund ISIN from our mapping
-                fund_isin = fund_name_to_isin[fund_name]
+                stats['funds_matched'] += 1
                 
-                # Helper function to safely convert to float
-                def safe_float(val):
-                    if pd.isna(val):
-                        return None
-                    try:
-                        # Remove any non-numeric characters except decimal points and minus signs
-                        if isinstance(val, str):
-                            # Replace @ symbols and other invalid chars with empty string
-                            cleaned = ''.join(c for c in val if c.isdigit() or c in '.-')
-                            if not cleaned or cleaned in ['.', '-', '.-']:
-                                return None
-                            return float(cleaned)
-                        return float(val)
-                    except (ValueError, TypeError):
-                        return None
-                
-                # Create portfolio holding with data validation
+                # Create portfolio holding with new column mapping
                 try:
                     holding = PortfolioHolding(
-                        isin=fund_isin,
+                        isin=scheme_isin,  # Use Scheme ISIN to link to fund
                         instrument_isin=str(row['ISIN']).strip() if not pd.isna(row['ISIN']) else None,
-                        coupon=safe_float(row['Coupon (%)']),
-                        instrument_name=str(row['Name Of the Instrument']).strip(),
-                        sector=str(row['Sector']).strip() if not pd.isna(row['Sector']) else None,
-                        quantity=safe_float(row['Quantity']),
-                        value=safe_float(row['Value']),
-                        percentage_to_nav=safe_float(row['% to NAV']) or 0.0,
-                        yield_value=safe_float(row['Yield']),
-                        instrument_type=str(row['Type']).strip() if not pd.isna(row['Type']) else 'Other'
+                        coupon=safe_float(row.get('Coupon', None)),
+                        instrument_name=str(row['Name of Instrument']).strip(),
+                        sector=str(row.get('Industry', '')).strip() if not pd.isna(row.get('Industry', None)) else None,
+                        quantity=safe_float(row.get('Quantity', None)),
+                        value=safe_float(row.get('Market Value', None)),
+                        percentage_to_nav=safe_float(row.get('% to Net Assets', None)) or 0.0,
+                        yield_value=safe_float(row.get('Yield', None)),
+                        instrument_type=str(row.get('Type', 'Other')).strip() if not pd.isna(row.get('Type', None)) else 'Other'
                     )
+                    
+                    db.session.add(holding)
+                    stats['holdings_created'] += 1
+                    
                 except Exception as e:
-                    logger.error(f"Error creating portfolio holding for {fund_name}: {e}")
+                    logger.error(f"Error creating portfolio holding for Scheme ISIN {scheme_isin}: {e}")
                     continue
-                db.session.add(holding)
-                stats['holdings_created'] += 1
                 
                 # Commit every 100 records to avoid large transactions
                 if stats['holdings_created'] % 100 == 0:
