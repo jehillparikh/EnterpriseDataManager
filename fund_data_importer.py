@@ -74,12 +74,15 @@ class FundDataImporter:
             df = df.dropna(subset=['ISIN'])
             logger.info(f"{len(df)} valid ISINs after cleaning")
 
-            if clear_existing and not df.empty:
-                isins = df['ISIN'].unique().tolist()
-                FundFactSheet.query.filter(FundFactSheet.isin.in_(isins)).delete(synchronize_session=False)
-                Fund.query.filter(Fund.isin.in_(isins)).delete(synchronize_session=False)
+            if clear_existing:
+                # Clear ALL existing factsheet and fund data
+                factsheet_count = FundFactSheet.query.count()
+                fund_count = Fund.query.count()
+                
+                FundFactSheet.query.delete()
+                Fund.query.delete()
                 db.session.commit()
-                logger.info(f"Cleared existing records for {len(isins)} ISINs")
+                logger.info(f"Cleared ALL existing data: {factsheet_count} factsheets and {fund_count} funds")
 
             stats = {
                 'funds_created': 0,
@@ -117,8 +120,15 @@ class FundDataImporter:
 
                     # Bulk insert in batches
                     if len(fund_records) >= batch_size:
-                        db.session.bulk_insert_mappings(Fund.__mapper__, fund_records)
-                        db.session.bulk_insert_mappings(FundFactSheet.__mapper__, factsheet_records)
+                        # Use individual inserts for better compatibility
+                        for fund_data in fund_records:
+                            fund = Fund(**fund_data)
+                            db.session.add(fund)
+                        
+                        for factsheet_data in factsheet_records:
+                            factsheet = FundFactSheet(**factsheet_data)
+                            db.session.add(factsheet)
+                        
                         db.session.commit()
                         stats['funds_created'] += len(fund_records)
                         stats['factsheets_created'] += len(factsheet_records)
@@ -133,8 +143,15 @@ class FundDataImporter:
 
             # Insert remaining
             if fund_records:
-                db.session.bulk_insert_mappings(Fund.__mapper__, fund_records)
-                db.session.bulk_insert_mappings(FundFactSheet.__mapper__, factsheet_records)
+                # Use individual inserts for better compatibility
+                for fund_data in fund_records:
+                    fund = Fund(**fund_data)
+                    db.session.add(fund)
+                
+                for factsheet_data in factsheet_records:
+                    factsheet = FundFactSheet(**factsheet_data)
+                    db.session.add(factsheet)
+                
                 db.session.commit()
                 stats['funds_created'] += len(fund_records)
                 stats['factsheets_created'] += len(factsheet_records)

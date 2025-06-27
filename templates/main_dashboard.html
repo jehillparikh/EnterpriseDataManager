@@ -216,10 +216,14 @@ Select an endpoint above to see the API response...
                             <div class="row mt-3">
                                 <div class="col-md-6">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="clear-existing">
+                                        <input class="form-check-input" type="checkbox" id="clear-existing" onchange="showClearWarning()">
                                         <label class="form-check-label" for="clear-existing">
                                             Clear existing data before import
                                         </label>
+                                    </div>
+                                    <div class="alert alert-warning mt-2" id="clear-warning" style="display: none;">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <strong>Warning:</strong> This will permanently delete ALL existing data from the selected table type in your database before importing new data.
                                     </div>
                                 </div>
                                 <div class="col-md-6" id="batch-size-container" style="display: none;">
@@ -329,6 +333,14 @@ Select an endpoint above to see the API response...
             if (!fileType || !file) {
                 alert('Please select data type and file');
                 return;
+            }
+
+            // Show confirmation dialog if clear existing is checked
+            if (clearExisting.checked) {
+                const confirmMessage = `⚠️ WARNING: You are about to permanently delete ALL existing ${fileType} data from your database.\n\nThis action cannot be undone. Are you sure you want to continue?`;
+                if (!confirm(confirmMessage)) {
+                    return;
+                }
             }
 
             // Show temp file notification
@@ -497,6 +509,18 @@ Select an endpoint above to see the API response...
         function clearConsole() {
             const consoleOutput = document.getElementById('console-output');
             consoleOutput.innerHTML = '<div class="text-muted">Console cleared.</div>';
+        }
+
+        // Clear data warning function
+        function showClearWarning() {
+            const clearCheckbox = document.getElementById('clear-existing');
+            const warningDiv = document.getElementById('clear-warning');
+            
+            if (clearCheckbox.checked) {
+                warningDiv.style.display = 'block';
+            } else {
+                warningDiv.style.display = 'none';
+            }
         }
 
         // API Testing Functions
