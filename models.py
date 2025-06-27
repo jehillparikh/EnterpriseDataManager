@@ -121,3 +121,34 @@ class NavHistory(db.Model):
     __table_args__ = (
         CheckConstraint('nav >= 0', name='check_nav'),
     )
+
+
+class FundRating(db.Model):
+    """
+    Fund ratings from various rating agencies
+    """
+    __tablename__ = 'mf_fund_ratings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    isin = db.Column(db.String(12), db.ForeignKey('mf_fund.isin'), nullable=False)
+    rating_agency = db.Column(db.String(50), nullable=False)  # CRISIL, Morningstar, Value Research, etc.
+    rating_category = db.Column(db.String(50), nullable=False)  # Overall, Risk, Return, Expense, etc.
+    rating_value = db.Column(db.String(10), nullable=False)  # 5 Star, AAA, High, etc.
+    rating_numeric = db.Column(db.Float, nullable=True)  # Numeric equivalent (1-5 for stars, 1-10 for scores)
+    rating_date = db.Column(db.Date, nullable=False)  # Date when rating was assigned
+    rating_outlook = db.Column(db.String(20), nullable=True)  # Positive, Negative, Stable, Under Review
+    rating_description = db.Column(db.Text, nullable=True)  # Additional rating commentary
+    is_current = db.Column(db.Boolean, default=True)  # Flag to mark current vs historical ratings
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship to Fund
+    fund = db.relationship("Fund", backref="fund_ratings")
+    
+    __table_args__ = (
+        Index('idx_rating_agency_category', 'rating_agency', 'rating_category'),
+        Index('idx_rating_current', 'is_current'),
+        Index('idx_rating_date', 'rating_date'),
+        CheckConstraint('rating_numeric >= 0', name='check_rating_numeric_positive'),
+        CheckConstraint('rating_numeric <= 10', name='check_rating_numeric_max'),
+    )
