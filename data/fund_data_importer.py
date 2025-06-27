@@ -385,7 +385,9 @@ class FundDataImporter:
                         value=safe_float(row.get('Market Value', None)),
                         percentage_to_nav=safe_float(row.get('% to Net Assets', None)) or 0.0,
                         yield_value=safe_float(row.get('Yield', None)),
-                        instrument_type=str(row.get('Type', 'Other')).strip() if not pd.isna(row.get('Type', None)) else 'Other'
+                        instrument_type=str(row.get('Type', 'Other')).strip() if not pd.isna(row.get('Type', None)) else 'Other',
+                        amc_name=str(row.get('AMC', '')).strip() if not pd.isna(row.get('AMC', None)) else None,
+                        scheme_name=str(row.get('Scheme Name', '')).strip() if not pd.isna(row.get('Scheme Name', None)) else None
                     )
                     
                     db.session.add(holding)

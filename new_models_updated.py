@@ -75,20 +75,24 @@ class FundReturns(db.Model):
 class PortfolioHolding(db.Model):
     """
     Portfolio holdings of a mutual fund
+    Expected columns: Name of Instrument, ISIN, Coupon, Industry, Quantity, 
+    Market Value, % to Net Assets, Yield, Type, AMC, Scheme Name, Scheme ISIN
     """
     __tablename__ = 'mf_portfolio_holdings'
     
     id = db.Column(db.Integer, primary_key=True)
-    isin = db.Column(db.String(12), db.ForeignKey('mf_fund.isin'), nullable=False)
+    isin = db.Column(db.String(12), db.ForeignKey('mf_fund.isin'), nullable=False)  # Scheme ISIN
     instrument_isin = db.Column(db.String(12), nullable=True)  # ISIN of the instrument
     coupon = db.Column(db.Float, nullable=True)  # Coupon percentage for debt instruments
-    instrument_name = db.Column(db.String(255), nullable=False)  # Name of the instrument
-    sector = db.Column(db.String(100), nullable=True)  # Sector of the instrument
+    instrument_name = db.Column(db.String(255), nullable=False)  # Name of Instrument
+    sector = db.Column(db.String(100), nullable=True)  # Industry classification
     quantity = db.Column(db.Float, nullable=True)  # Quantity held
-    value = db.Column(db.Float, nullable=True)  # Value in INR
-    percentage_to_nav = db.Column(db.Float, nullable=False)  # Percentage allocation to NAV
+    value = db.Column(db.Float, nullable=True)  # Market Value in INR
+    percentage_to_nav = db.Column(db.Float, nullable=False)  # % to Net Assets
     yield_value = db.Column(db.Float, nullable=True)  # Yield percentage
-    instrument_type = db.Column(db.String(50), nullable=False)  # Type of instrument (Equity, Debt, etc)
+    instrument_type = db.Column(db.String(50), nullable=False)  # Type of instrument
+    amc_name = db.Column(db.String(100), nullable=True)  # AMC name from upload
+    scheme_name = db.Column(db.String(255), nullable=True)  # Scheme Name from upload
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationship to Fund
