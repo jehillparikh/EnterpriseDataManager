@@ -40,13 +40,31 @@ def create_app():
     # Create Flask application
     app = Flask(__name__)
     
-    # Configure database
-    database_uri = os.environ.get('SQLALCHEMY_DATABASE_URI')
+    # Configure database - prioritize Google Cloud SQL
+    database_uri = os.environ.get('GOOGLE_CLOUD_DATABASE_URL')
+    if database_uri:
+        logger.info("Attempting to use Google Cloud SQL database")
+        # Check if the connection string has the correct PostgreSQL format
+        try:
+            # Test if the URL can be parsed properly
+            from sqlalchemy.engine import make_url
+            make_url(database_uri)
+            logger.info("Google Cloud SQL connection string format is valid")
+        except Exception as e:
+            logger.error(f"Invalid Google Cloud database URL format: {e}")
+            logger.error("The connection string should be in format: postgresql://username:password@host:port/database")
+            logger.error("For Google Cloud SQL, use the public IP address, not the connection name")
+            logger.info("Falling back to default database connection")
+            database_uri = None
+    
     if not database_uri:
-        logger.error("SQLALCHEMY_DATABASE_URI environment variable not set!")
-        logger.warning("Using fallback connection string for development only")
-        # For local development only, should never be used in production
-        database_uri = "postgresql://userdatabase_740c_user:VswYN2reYmzvjgZ5QMkNugBPxYvzTe08@dpg-cvn3uaemcj7s73c3a8vg-a.singapore-postgres.render.com/userdatabase_740c"
+        # Fallback to other database URLs
+        database_uri = os.environ.get('DATABASE_URL') or os.environ.get('SQLALCHEMY_DATABASE_URI')
+        if database_uri:
+            logger.info("Using fallback database connection")
+        else:
+            logger.error("No valid database connection string found!")
+            raise ValueError("Database connection string required")
     
     # Set this in the environment in case any other modules need it
     os.environ['SQLALCHEMY_DATABASE_URI'] = database_uri
