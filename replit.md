@@ -158,6 +158,13 @@ The application uses a PostgreSQL database with the following key architectural 
   - Implemented temp folder management with file name notifications
   - Added real-time console output display with color-coded messages
   - Added "Clear Temp Folder" functionality for file cleanup
+- June 27, 2025: Integrated robust FundDataImporter class
+  - Replaced inline import functions with comprehensive FundDataImporter
+  - Enhanced error handling and data validation
+  - Improved batch processing for large datasets
+  - Better column mapping for flexible Excel file formats
+  - Added detailed import statistics tracking
+  - Fixed JSON parsing errors in frontend upload functionality
 
 ## User Preferences
 
