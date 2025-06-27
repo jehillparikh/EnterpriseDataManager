@@ -154,3 +154,130 @@ class FundRating(db.Model):
         CheckConstraint('rating_numeric >= 0', name='check_rating_numeric_positive'),
         CheckConstraint('rating_numeric <= 10', name='check_rating_numeric_max'),
     )
+
+
+class FundAnalytics(db.Model):
+    """
+    Advanced analytics and metrics for mutual funds
+    """
+    __tablename__ = 'mf_fund_analytics'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    isin = db.Column(db.String(12), db.ForeignKey('mf_fund.isin'), nullable=False)
+    
+    # Risk Metrics
+    beta = db.Column(db.Float, nullable=True)  # Beta coefficient vs benchmark
+    alpha = db.Column(db.Float, nullable=True)  # Alpha (excess return vs benchmark)
+    standard_deviation = db.Column(db.Float, nullable=True)  # Volatility measure
+    sharpe_ratio = db.Column(db.Float, nullable=True)  # Risk-adjusted return
+    sortino_ratio = db.Column(db.Float, nullable=True)  # Downside risk-adjusted return
+    treynor_ratio = db.Column(db.Float, nullable=True)  # Return per unit of systematic risk
+    information_ratio = db.Column(db.Float, nullable=True)  # Active return vs tracking error
+    
+    # Performance Metrics
+    tracking_error = db.Column(db.Float, nullable=True)  # Standard deviation of excess returns
+    r_squared = db.Column(db.Float, nullable=True)  # Correlation with benchmark (0-100)
+    maximum_drawdown = db.Column(db.Float, nullable=True)  # Largest peak-to-trough decline
+    calmar_ratio = db.Column(db.Float, nullable=True)  # Annual return / max drawdown
+    
+    # Market Timing Metrics
+    up_capture_ratio = db.Column(db.Float, nullable=True)  # Performance in rising markets
+    down_capture_ratio = db.Column(db.Float, nullable=True)  # Performance in falling markets
+    
+    # Advanced Metrics
+    var_95 = db.Column(db.Float, nullable=True)  # Value at Risk (95% confidence)
+    var_99 = db.Column(db.Float, nullable=True)  # Value at Risk (99% confidence)
+    skewness = db.Column(db.Float, nullable=True)  # Return distribution asymmetry
+    kurtosis = db.Column(db.Float, nullable=True)  # Return distribution tail risk
+    
+    # Reference Data
+    benchmark_index = db.Column(db.String(50), nullable=True)  # Primary benchmark
+    calculation_period = db.Column(db.String(20), nullable=True)  # Period for calculations (1Y, 3Y, 5Y)
+    calculation_date = db.Column(db.Date, nullable=False)  # Date of calculation
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship to Fund
+    fund = db.relationship("Fund", backref="fund_analytics")
+    
+    __table_args__ = (
+        Index('idx_analytics_calculation_date', 'calculation_date'),
+        Index('idx_analytics_period', 'calculation_period'),
+        Index('idx_analytics_benchmark', 'benchmark_index'),
+        CheckConstraint('r_squared >= 0 AND r_squared <= 100', name='check_r_squared_range'),
+        CheckConstraint('sharpe_ratio >= -10 AND sharpe_ratio <= 10', name='check_sharpe_ratio_range'),
+        CheckConstraint('beta >= 0', name='check_beta_positive'),
+    )
+
+
+class FundStatistics(db.Model):
+    """
+    Statistical data and portfolio composition metrics for mutual funds
+    """
+    __tablename__ = 'mf_fund_statistics'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    isin = db.Column(db.String(12), db.ForeignKey('mf_fund.isin'), nullable=False)
+    
+    # Portfolio Composition
+    total_holdings = db.Column(db.Integer, nullable=True)  # Number of holdings
+    top_10_holdings_percentage = db.Column(db.Float, nullable=True)  # % in top 10 holdings
+    equity_percentage = db.Column(db.Float, nullable=True)  # Equity allocation %
+    debt_percentage = db.Column(db.Float, nullable=True)  # Debt allocation %
+    cash_percentage = db.Column(db.Float, nullable=True)  # Cash and equivalents %
+    other_percentage = db.Column(db.Float, nullable=True)  # Other investments %
+    
+    # Market Cap Distribution
+    large_cap_percentage = db.Column(db.Float, nullable=True)  # Large cap allocation
+    mid_cap_percentage = db.Column(db.Float, nullable=True)  # Mid cap allocation
+    small_cap_percentage = db.Column(db.Float, nullable=True)  # Small cap allocation
+    
+    # Sector Concentration
+    top_sector_name = db.Column(db.String(100), nullable=True)  # Highest weighted sector
+    top_sector_percentage = db.Column(db.Float, nullable=True)  # Top sector weight
+    sector_concentration_ratio = db.Column(db.Float, nullable=True)  # Top 3 sectors combined %
+    
+    # Credit Quality (for debt funds)
+    aaa_percentage = db.Column(db.Float, nullable=True)  # AAA rated securities
+    aa_percentage = db.Column(db.Float, nullable=True)  # AA rated securities
+    a_percentage = db.Column(db.Float, nullable=True)  # A rated securities
+    below_a_percentage = db.Column(db.Float, nullable=True)  # Below A rated securities
+    unrated_percentage = db.Column(db.Float, nullable=True)  # Unrated securities
+    
+    # Duration Metrics (for debt funds)
+    average_maturity = db.Column(db.Float, nullable=True)  # Average maturity in years
+    modified_duration = db.Column(db.Float, nullable=True)  # Interest rate sensitivity
+    yield_to_maturity = db.Column(db.Float, nullable=True)  # Portfolio YTM
+    
+    # Flow Statistics
+    monthly_inflow = db.Column(db.Float, nullable=True)  # Last month inflow (crores)
+    monthly_outflow = db.Column(db.Float, nullable=True)  # Last month outflow (crores)
+    net_flow = db.Column(db.Float, nullable=True)  # Net flow (inflow - outflow)
+    quarterly_flow = db.Column(db.Float, nullable=True)  # Last quarter net flow
+    yearly_flow = db.Column(db.Float, nullable=True)  # Last year net flow
+    
+    # Turnover Metrics
+    portfolio_turnover_ratio = db.Column(db.Float, nullable=True)  # Annual turnover %
+    
+    # Reference Data
+    statistics_date = db.Column(db.Date, nullable=False)  # Date of statistics
+    data_source = db.Column(db.String(50), nullable=True)  # Data provider
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship to Fund
+    fund = db.relationship("Fund", backref="fund_statistics")
+    
+    __table_args__ = (
+        Index('idx_statistics_date', 'statistics_date'),
+        Index('idx_statistics_source', 'data_source'),
+        CheckConstraint('equity_percentage >= 0 AND equity_percentage <= 100', name='check_equity_percentage'),
+        CheckConstraint('debt_percentage >= 0 AND debt_percentage <= 100', name='check_debt_percentage'),
+        CheckConstraint('cash_percentage >= 0 AND cash_percentage <= 100', name='check_cash_percentage'),
+        CheckConstraint('top_10_holdings_percentage >= 0 AND top_10_holdings_percentage <= 100', name='check_top_10_percentage'),
+        CheckConstraint('portfolio_turnover_ratio >= 0', name='check_turnover_positive'),
+    )
