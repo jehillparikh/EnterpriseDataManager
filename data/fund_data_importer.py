@@ -362,7 +362,21 @@ class FundDataImporter:
             # Process each row
             for _, row in df.iterrows():
                 stats['rows_processed'] += 1
-                scheme_isin = str(row['Scheme ISIN']).strip()
+                scheme_isin = row['Scheme ISIN']
+                
+                # Skip if Scheme ISIN is NaN or invalid
+                if pd.isna(scheme_isin) or not scheme_isin:
+                    stats['funds_not_found'] += 1
+                    logger.warning(f"Skipping row with invalid/empty Scheme ISIN")
+                    continue
+                    
+                scheme_isin = str(scheme_isin).strip()
+                
+                # Skip if ISIN is not 12 characters (invalid format)
+                if len(scheme_isin) != 12:
+                    stats['funds_not_found'] += 1
+                    logger.warning(f"Skipping row with invalid Scheme ISIN format: {scheme_isin}")
+                    continue
                 
                 # Skip if fund not found in our database
                 if scheme_isin not in existing_isins:
