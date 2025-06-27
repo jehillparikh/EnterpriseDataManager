@@ -145,6 +145,12 @@ The application uses a PostgreSQL database with the following key architectural 
   - Cleared database completely to remove all existing tables
   - Simplified to core files only: models.py, fund_api.py, app.py, setup_db.py, config.py, main.py
   - Application now runs with minimal, clean codebase ready for new implementation
+- June 27, 2025: Restored comprehensive frontend dashboard
+  - Integrated previous version's professional dashboard interface
+  - Enhanced API testing with interactive forms and real-time response display
+  - Implemented four-flow data upload system: Factsheet → Portfolio → Returns → NAV
+  - Added two-step upload process: store file then import to database
+  - Database completely cleared and ready for fresh data uploads
 
 ## User Preferences
 

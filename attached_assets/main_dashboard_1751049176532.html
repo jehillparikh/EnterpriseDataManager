@@ -282,109 +282,81 @@ Select an endpoint above to see the API response...
                         </div>
                     </div>
 
-                    <!-- Flow 3: Returns Data -->
+                    <!-- Flow 3: NAV and Returns Data -->
                     <div class="card mb-4">
                         <div class="card-header">
-                            <h4 class="mb-0">📈 Flow 3: Returns Data</h4>
-                            <small class="text-muted">Upload and process fund performance returns data</small>
+                            <h4 class="mb-0">📈 Flow 3: NAV Time Series & Returns</h4>
+                            <small class="text-muted">Upload and process NAV history and performance returns data together</small>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-8">
-                                    <input type="file" id="returns-file" class="file-input" accept=".xlsx,.xls">
-                                    <button class="btn btn-outline-primary" onclick="document.getElementById('returns-file').click()">
-                                        Choose Returns File
-                                    </button>
-                                    <div class="file-info" id="returns-info"></div>
+                                    <!-- Returns File -->
+                                    <div class="mb-4">
+                                        <h6>Returns Data File</h6>
+                                        <input type="file" id="returns-file" class="file-input" accept=".xlsx,.xls">
+                                        <button class="btn btn-outline-primary btn-sm" onclick="document.getElementById('returns-file').click()">
+                                            Choose Returns File
+                                        </button>
+                                        <div class="file-info" id="returns-info"></div>
+                                        <button class="btn btn-primary btn-sm mt-2" id="returns-upload" disabled onclick="uploadFile('returns')">
+                                            Store Returns File
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- NAV File -->
+                                    <div class="mb-4">
+                                        <h6>NAV Time Series File</h6>
+                                        <input type="file" id="nav-file" class="file-input" accept=".xlsx,.xls">
+                                        <button class="btn btn-outline-primary btn-sm" onclick="document.getElementById('nav-file').click()">
+                                            Choose NAV File
+                                        </button>
+                                        <div class="file-info" id="nav-info"></div>
+                                        <button class="btn btn-primary btn-sm mt-2" id="nav-upload" disabled onclick="uploadFile('nav')">
+                                            Store NAV File
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Options -->
                                     <div class="mt-3">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="returns-clear">
-                                            <label class="form-check-label" for="returns-clear">
-                                                Clear existing returns data before import
+                                            <input class="form-check-input" type="checkbox" id="nav-returns-clear">
+                                            <label class="form-check-label" for="nav-returns-clear">
+                                                Clear existing NAV and returns data before import
                                             </label>
                                         </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 text-end">
-                                    <button class="btn btn-primary upload-btn mb-2" id="returns-upload" disabled onclick="uploadFile('returns')">
-                                        Store File
-                                    </button>
-                                    <br>
-                                    <button class="btn btn-success" id="returns-submit" disabled onclick="submitReturns()">
-                                        Import to Database
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="progress mt-3" id="returns-progress">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
-                            </div>
-                            <div class="result mt-3" id="returns-result"></div>
-                        </div>
-                    </div>
-
-                    <!-- Flow 4: NAV History -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h4 class="mb-0">📊 Flow 4: NAV History</h4>
-                            <small class="text-muted">Upload and process NAV time series data</small>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <input type="file" id="nav-file" class="file-input" accept=".xlsx,.xls">
-                                    <button class="btn btn-outline-primary" onclick="document.getElementById('nav-file').click()">
-                                        Choose NAV File
-                                    </button>
-                                    <div class="file-info" id="nav-info"></div>
-                                    <div class="mt-3">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="nav-clear">
-                                                    <label class="form-check-label" for="nav-clear">
-                                                        Clear existing NAV data before import
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="nav-batch-size" class="form-label">Batch Size</label>
-                                                <input type="number" class="form-control" id="nav-batch-size" value="1000" min="100" max="10000">
-                                            </div>
+                                        <div class="mt-2">
+                                            <label for="nav-batch-size" class="form-label">Batch Size (for large NAV files)</label>
+                                            <input type="number" class="form-control" id="nav-batch-size" value="1000" min="100" max="10000">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4 text-end">
-                                    <button class="btn btn-primary upload-btn mb-2" id="nav-upload" disabled onclick="uploadFile('nav')">
-                                        Store File
-                                    </button>
-                                    <br>
-                                    <button class="btn btn-success" id="nav-submit" disabled onclick="submitNav()">
+                                    <button class="btn btn-success" id="nav-returns-submit" disabled onclick="submitNavReturns()">
                                         Import to Database
                                     </button>
+                                    <div class="mt-3">
+                                        <small class="text-muted">Upload at least one file to enable import</small>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div class="progress mt-3" id="nav-progress">
+                            <div class="progress mt-3" id="nav-returns-progress">
                                 <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
                             </div>
-                            <div class="result mt-3" id="nav-result"></div>
+                            <div class="result mt-3" id="nav-returns-result"></div>
                         </div>
                     </div>
 
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <div class="alert alert-info">
-                                <h5>Upload Instructions:</h5>
-                                <ul class="mb-0">
-                                    <li>Upload files in order: Factsheet → Portfolio → Returns → NAV</li>
-                                    <li>Factsheet data must be uploaded first as it creates the base fund records</li>
-                                    <li>Only Excel files (.xlsx, .xls) are supported</li>
-                                    <li>Files are temporarily stored and automatically deleted after processing</li>
-                                    <li>Large NAV files may take several minutes to process</li>
-                                </ul>
-                            </div>
-                        </div>
+                    <div class="alert alert-info mt-4">
+                        <h5>Upload Instructions:</h5>
+                        <ul class="mb-0">
+                            <li>Upload files in order: Factsheet → Returns → Portfolio → NAV</li>
+                            <li>Factsheet data must be uploaded first as it creates the base fund records</li>
+                            <li>Only Excel files (.xlsx, .xls) are supported</li>
+                            <li>Files are temporarily stored and automatically deleted after processing</li>
+                            <li>Large NAV files may take several minutes to process</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -393,17 +365,54 @@ Select an endpoint above to see the API response...
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // File input change handlers
+        // API Testing Functions
+        function testEndpoint(endpoint, resultId) {
+            fetch(endpoint)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('api-response').textContent = JSON.stringify(data, null, 2);
+                    document.getElementById(resultId).innerHTML = `<small class="text-success">✓ Response received</small>`;
+                })
+                .catch(error => {
+                    document.getElementById('api-response').textContent = `Error: ${error.message}`;
+                    document.getElementById(resultId).innerHTML = `<small class="text-danger">✗ Error occurred</small>`;
+                });
+        }
+
+        function testFundEndpoint() {
+            const isin = document.getElementById('fund-isin').value.trim();
+            if (!isin) {
+                alert('Please enter an ISIN');
+                return;
+            }
+            testEndpoint(`/api/funds/${isin}`, 'fund-result');
+        }
+
+        function testCompleteEndpoint() {
+            const isin = document.getElementById('complete-isin').value.trim();
+            if (!isin) {
+                alert('Please enter an ISIN');
+                return;
+            }
+            testEndpoint(`/api/funds/${isin}/complete`, 'complete-result');
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSubmitButtons();
+        });
+
+        // File Upload Functions
         document.getElementById('factsheet-file').addEventListener('change', function(e) {
             handleFileSelect(e, 'factsheet');
         });
 
-        document.getElementById('portfolio-file').addEventListener('change', function(e) {
-            handleFileSelect(e, 'portfolio');
-        });
-
         document.getElementById('returns-file').addEventListener('change', function(e) {
             handleFileSelect(e, 'returns');
+        });
+
+        document.getElementById('portfolio-file').addEventListener('change', function(e) {
+            handleFileSelect(e, 'portfolio');
         });
 
         document.getElementById('nav-file').addEventListener('change', function(e) {
@@ -432,10 +441,10 @@ Select an endpoint above to see the API response...
 
         function uploadFile(type) {
             const fileInput = document.getElementById(type + '-file');
+            const clearCheckbox = document.getElementById(type + '-clear');
             const progressDiv = document.getElementById(type + '-progress');
             const resultDiv = document.getElementById(type + '-result');
             const uploadBtn = document.getElementById(type + '-upload');
-            const submitBtn = document.getElementById(type + '-submit');
 
             if (!fileInput.files[0]) {
                 alert('Please select a file first');
@@ -450,9 +459,16 @@ Select an endpoint above to see the API response...
             // Create FormData
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
+            formData.append('clear_existing', clearCheckbox.checked);
 
-            // Make API call to store file
-            fetch('/api/upload', {
+            // Add batch size for NAV uploads
+            if (type === 'nav') {
+                const batchSize = document.getElementById('nav-batch-size').value;
+                formData.append('batch_size', batchSize);
+            }
+
+            // Make API call
+            fetch(`/api/upload/${type}`, {
                 method: 'POST',
                 body: formData
             })
@@ -471,97 +487,246 @@ Select an endpoint above to see the API response...
                 } else {
                     resultDiv.innerHTML = `
                         <div class="alert alert-success">
-                            <strong>File Stored:</strong> ${data.message}<br>
-                            <small>Rows: ${data.rows} | Columns: ${data.columns}</small>
+                            <strong>Success:</strong> ${data.message}
+                            <br><small>File: ${data.filename} (${data.size})</small>
                         </div>
                     `;
-                    submitBtn.disabled = false;
+                    // Update submit buttons after successful upload
+                    updateSubmitButtons();
                 }
             })
             .catch(error => {
                 progressDiv.style.display = 'none';
                 resultDiv.style.display = 'block';
                 uploadBtn.disabled = false;
+
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
-                        <strong>Error:</strong> ${error.message}
+                        <strong>Error:</strong> ${error.message || 'Upload failed'}
                     </div>
                 `;
             });
         }
 
-        // API Testing Functions
-        function testEndpoint(endpoint, resultId) {
-            fetch(endpoint)
+        // Submit button management
+        function updateSubmitButtons() {
+            fetch('/api/upload/status')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('api-response').textContent = JSON.stringify(data, null, 2);
-                    if (resultId) {
-                        document.getElementById(resultId).innerHTML = `
-                            <div class="alert alert-success">
-                                <small>Status: 200 OK | Response displayed below</small>
-                            </div>
-                        `;
+                    // Enable factsheet submit if factsheet file is uploaded
+                    const factsheetSubmit = document.getElementById('factsheet-submit');
+                    if (factsheetSubmit) {
+                        factsheetSubmit.disabled = !data.files.factsheet?.uploaded;
+                    }
+                    
+                    // Enable portfolio submit if portfolio file is uploaded
+                    const portfolioSubmit = document.getElementById('portfolio-submit');
+                    if (portfolioSubmit) {
+                        portfolioSubmit.disabled = !data.files.portfolio?.uploaded;
+                    }
+                    
+                    // Enable nav-returns submit if either returns or nav file is uploaded
+                    const navReturnsSubmit = document.getElementById('nav-returns-submit');
+                    if (navReturnsSubmit) {
+                        const hasReturns = data.files.returns?.uploaded;
+                        const hasNav = data.files.nav?.uploaded;
+                        navReturnsSubmit.disabled = !(hasReturns || hasNav);
                     }
                 })
                 .catch(error => {
-                    document.getElementById('api-response').textContent = `Error: ${error.message}`;
-                    if (resultId) {
-                        document.getElementById(resultId).innerHTML = `
-                            <div class="alert alert-danger">
-                                <small>Error: ${error.message}</small>
-                            </div>
-                        `;
-                    }
+                    console.error('Error checking file status:', error);
                 });
         }
 
-        function testFundEndpoint() {
-            const isin = document.getElementById('fund-isin').value.trim();
-            if (!isin) {
-                alert('Please enter an ISIN');
-                return;
-            }
-            testEndpoint(`/api/funds/${isin}`, 'fund-result');
+        // Flow 1: Submit Factsheet Data
+        function submitFactsheet() {
+            submitFlow('factsheet', '/api/upload/factsheet/submit', 'factsheet-submit', 'factsheet-result');
         }
 
-        function testCompleteEndpoint() {
-            const isin = document.getElementById('complete-isin').value.trim();
-            if (!isin) {
-                alert('Please enter an ISIN');
-                return;
+        // Flow 2: Submit Portfolio Data
+        function submitPortfolio() {
+            submitFlow('portfolio', '/api/upload/portfolio/submit', 'portfolio-submit', 'portfolio-result');
+        }
+
+        // Flow 3: Submit NAV and Returns Data
+        function submitNavReturns() {
+            const formData = new FormData();
+            const clearExisting = document.getElementById('nav-returns-clear').checked;
+            const batchSize = document.getElementById('nav-batch-size').value;
+            
+            formData.append('clear_existing', clearExisting.toString());
+            formData.append('batch_size', batchSize);
+            
+            submitFlow('nav-returns', '/api/upload/nav-returns/submit', 'nav-returns-submit', 'nav-returns-result', formData);
+        }
+
+        // Generic submit function for all flows
+        function submitFlow(flowName, endpoint, submitBtnId, resultDivId, customFormData = null) {
+            const submitBtn = document.getElementById(submitBtnId);
+            const resultDiv = document.getElementById(resultDivId);
+            const progressDiv = document.getElementById(flowName + '-progress');
+            
+            // Show progress and update button text
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Processing...';
+            progressDiv.style.display = 'block';
+            resultDiv.innerHTML = '';
+            if (progressDiv) progressDiv.style.display = 'block';
+            resultDiv.innerHTML = '';
+            
+            // Prepare form data
+            const formData = customFormData || new FormData();
+            if (!customFormData) {
+                // Add clear_existing option for individual flows
+                const clearCheckbox = document.getElementById(flowName.replace('-returns', '') + '-clear');
+                if (clearCheckbox) {
+                    formData.append('clear_existing', clearCheckbox.checked.toString());
+                }
             }
-            testEndpoint(`/api/funds/${isin}/complete`, 'complete-result');
+            
+            // Submit to database
+            fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (progressDiv) progressDiv.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Import to Database';
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.error}
+                        </div>
+                    `;
+                } else {
+                    let resultsHtml = '';
+                    
+                    if (data.status === 'started') {
+                        resultsHtml = `<div class="alert alert-info" id="${flowName}-live-status">
+                            <strong>Processing Started:</strong> ${data.message}
+                            <br><small class="text-muted">Import is running in the background. Checking status...</small>
+                            <div class="mt-2"><div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 10%"></div></div></div>
+                        </div>`;
+                        
+                        // Start polling for status updates
+                        startStatusPolling(flowName);
+                    } else {
+                        resultsHtml = '<div class="alert alert-success"><strong>Success:</strong> ' + data.message + '</div>';
+                        
+                        if (data.results) {
+                            resultsHtml += '<div class="mt-3"><h6>Import Statistics:</h6>';
+                            for (const [type, stats] of Object.entries(data.results)) {
+                                resultsHtml += `<div class="card mb-2">
+                                    <div class="card-body">
+                                        <h6 class="card-title">${type.charAt(0).toUpperCase() + type.slice(1)} Data</h6>
+                                        <ul class="mb-0">`;
+                                
+                                if (typeof stats === 'object') {
+                                    for (const [key, value] of Object.entries(stats)) {
+                                        resultsHtml += `<li>${key.replace(/_/g, ' ')}: ${value}</li>`;
+                                    }
+                                } else {
+                                    resultsHtml += `<li>Status: ${stats}</li>`;
+                                }
+                                resultsHtml += '</ul></div></div>';
+                            }
+                            resultsHtml += '</div>';
+                        }
+                    }
+                    
+                    resultDiv.innerHTML = resultsHtml;
+                }
+            })
+            .catch(error => {
+                if (progressDiv) progressDiv.style.display = 'none';
+                submitBtn.disabled = false;
+                
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> ${error.message || 'Submit failed'}
+                    </div>
+                `;
+            });
         }
 
         function clearAllFiles() {
-            if (confirm('This will clear all temporary files. Continue?')) {
-                fetch('/api/upload/clear', { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => {
-                        alert(data.message || 'Files cleared successfully');
-                    })
-                    .catch(error => {
-                        alert('Error clearing files: ' + error.message);
-                    });
+            if (confirm('Are you sure you want to clear all uploaded files?')) {
+                fetch('/api/upload/clear', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                    } else {
+                        alert('All files cleared successfully');
+                        updateSubmitButtons();
+                        
+                        // Clear all result divs and form inputs
+                        ['factsheet', 'returns', 'portfolio', 'nav'].forEach(type => {
+                            const resultDiv = document.getElementById(type + '-result');
+                            const fileInput = document.getElementById(type + '-file');
+                            const infoDiv = document.getElementById(type + '-info');
+                            const uploadBtn = document.getElementById(type + '-upload');
+                            
+                            if (resultDiv) resultDiv.innerHTML = '';
+                            if (fileInput) fileInput.value = '';
+                            if (infoDiv) infoDiv.style.display = 'none';
+                            if (uploadBtn) uploadBtn.disabled = true;
+                        });
+                        
+                        // Clear flow-specific result divs
+                        const navReturnsResult = document.getElementById('nav-returns-result');
+                        if (navReturnsResult) navReturnsResult.innerHTML = '';
+                    }
+                })
+                .catch(error => {
+                    alert('Error clearing files: ' + error.message);
+                });
             }
         }
-
-        // Placeholder functions for submit operations
-        function submitFactsheet() {
-            alert('Factsheet submission functionality would be implemented here');
-        }
-
-        function submitPortfolio() {
-            alert('Portfolio submission functionality would be implemented here');
-        }
-
-        function submitReturns() {
-            alert('Returns submission functionality would be implemented here');
-        }
-
-        function submitNav() {
-            alert('NAV submission functionality would be implemented here');
+        
+        // Status polling function for real-time updates
+        function startStatusPolling(flowName) {
+            const statusDiv = document.getElementById(`${flowName}-live-status`);
+            if (!statusDiv) return;
+            
+            const pollInterval = setInterval(() => {
+                fetch(`/api/import/status?flow=${flowName}`)
+                    .then(response => response.json())
+                    .then(status => {
+                        if (status.status === 'completed') {
+                            clearInterval(pollInterval);
+                            statusDiv.innerHTML = `
+                                <div class="alert alert-success">
+                                    <strong>Import Completed:</strong> ${status.message}
+                                    ${status.stats ? `<br><small>Processed: ${JSON.stringify(status.stats)}</small>` : ''}
+                                </div>
+                            `;
+                        } else if (status.status === 'error') {
+                            clearInterval(pollInterval);
+                            statusDiv.innerHTML = `
+                                <div class="alert alert-danger">
+                                    <strong>Import Failed:</strong> ${status.message}
+                                </div>
+                            `;
+                        } else if (status.status === 'running') {
+                            statusDiv.innerHTML = `
+                                <div class="alert alert-info">
+                                    <strong>Processing:</strong> ${status.message}
+                                    <div class="mt-2"><div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width: ${status.progress || 50}%"></div></div></div>
+                                    <small class="text-muted">Last updated: ${new Date(status.last_updated).toLocaleTimeString()}</small>
+                                </div>
+                            `;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error polling status:', error);
+                    });
+            }, 2000); // Poll every 2 seconds
         }
     </script>
 </body>
