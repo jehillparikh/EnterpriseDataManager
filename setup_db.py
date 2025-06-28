@@ -44,7 +44,7 @@ def create_app():
     app = Flask(__name__)
 
     # Configure database - prioritize Google Cloud SQL
-    database_uri = os.environ.get('GOOGLE_CLOUD_DATABASE_URL')
+    database_uri = os.environ.get('GOOGLE_CLOUD_DATABASE_URL').strip()
 
     print(f"Database URI: {database_uri}")
 
