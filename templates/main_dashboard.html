@@ -205,11 +205,12 @@ Select an endpoint above to see the API response...
                                         <option value="holdings">Fund Holdings</option>
                                         <option value="returns">Returns Data</option>
                                         <option value="nav">NAV History</option>
+                                        <option value="bse_scheme">BSE Scheme Data</option>
                                     </select>
                                 </div>
                                 <div class="col-md-8">
-                                    <label for="upload-file" class="form-label">Excel File</label>
-                                    <input type="file" class="form-control" id="upload-file" accept=".xlsx,.xls">
+                                    <label for="upload-file" class="form-label">Data File</label>
+                                    <input type="file" class="form-control" id="upload-file" accept=".xlsx,.xls,.csv">
                                 </div>
                             </div>
                             
@@ -227,7 +228,7 @@ Select an endpoint above to see the API response...
                                     </div>
                                 </div>
                                 <div class="col-md-6" id="batch-size-container" style="display: none;">
-                                    <label for="batch-size" class="form-label">Batch Size (for NAV files)</label>
+                                    <label for="batch-size" class="form-label">Batch Size (for large files)</label>
                                     <input type="number" class="form-control" id="batch-size" value="1000" min="100" max="10000">
                                 </div>
                             </div>
@@ -305,9 +306,9 @@ Select an endpoint above to see the API response...
                 uploadButton.disabled = !(fileType && file);
             }
 
-            // Show/hide batch size for NAV files
+            // Show/hide batch size for NAV and BSE scheme files
             fileTypeSelect.addEventListener('change', function() {
-                if (this.value === 'nav') {
+                if (this.value === 'nav' || this.value === 'bse_scheme') {
                     batchSizeContainer.style.display = 'block';
                 } else {
                     batchSizeContainer.style.display = 'none';

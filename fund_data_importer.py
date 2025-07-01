@@ -8,7 +8,7 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from setup_db import db
-from models import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory
+from models import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory, BSEScheme
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -458,4 +458,208 @@ class FundDataImporter:
         except Exception as e:
             db.session.rollback()
             logger.error(f"Error importing NAV data: {e}")
+            raise
+    
+    def import_bse_scheme_data(self, df, clear_existing=False, batch_size=1000):
+        """
+        Import BSE scheme data from DataFrame
+        
+        Args:
+            df: DataFrame containing BSE scheme data
+            clear_existing (bool): Whether to clear existing data before import
+            batch_size (int): Number of records to process in each batch
+            
+        Returns:
+            dict: Statistics about the import operation
+        """
+        try:
+            logger.info(f"Starting BSE scheme import with {len(df)} rows")
+            
+            # Clear existing data if requested
+            if clear_existing:
+                deleted_count = BSEScheme.query.count()
+                db.session.query(BSEScheme).delete()
+                db.session.commit()
+                logger.info(f"Cleared {deleted_count} existing BSE scheme records")
+            
+            # Track statistics
+            stats = {
+                'schemes_created': 0,
+                'schemes_updated': 0,
+                'total_rows_processed': len(df),
+                'rows_skipped': 0,
+                'batch_size_used': batch_size,
+                'errors': []
+            }
+            
+            batch_count = 0
+            
+            # Column mapping for BSE scheme data
+            column_mapping = {
+                'Unique No': 'unique_no',
+                'Scheme Code': 'scheme_code',
+                'RTA Scheme Code': 'rta_scheme_code',
+                'AMC Scheme Code': 'amc_scheme_code',
+                'ISIN': 'isin',
+                'AMC Code': 'amc_code',
+                'Scheme Type': 'scheme_type',
+                'Scheme Plan': 'scheme_plan',
+                'Scheme Name': 'scheme_name',
+                'Purchase Allowed': 'purchase_allowed',
+                'Purchase Transaction mode': 'purchase_transaction_mode',
+                'Minimum Purchase Amount': 'minimum_purchase_amount',
+                'Additional Purchase Amount': 'additional_purchase_amount',
+                'Maximum Purchase Amount': 'maximum_purchase_amount',
+                'Purchase Amount Multiplier': 'purchase_amount_multiplier',
+                'Purchase Cutoff Time': 'purchase_cutoff_time',
+                'Redemption Allowed': 'redemption_allowed',
+                'Redemption Transaction Mode': 'redemption_transaction_mode',
+                'Minimum Redemption Qty': 'minimum_redemption_qty',
+                'Redemption Qty Multiplier': 'redemption_qty_multiplier',
+                'Maximum Redemption Qty': 'maximum_redemption_qty',
+                'Redemption Amount - Minimum': 'redemption_amount_minimum',
+                'Redemption Amount – Maximum': 'redemption_amount_maximum',
+                'Redemption Amount Multiple': 'redemption_amount_multiple',
+                'Redemption Cut off Time': 'redemption_cutoff_time',
+                'RTA Agent Code': 'rta_agent_code',
+                'AMC Active Flag': 'amc_active_flag',
+                'Dividend Reinvestment Flag': 'dividend_reinvestment_flag',
+                'SIP FLAG': 'sip_flag',
+                'STP FLAG': 'stp_flag',
+                'SWP Flag': 'swp_flag',
+                'Switch FLAG': 'switch_flag',
+                'SETTLEMENT TYPE': 'settlement_type',
+                'AMC_IND': 'amc_ind',
+                'Face Value': 'face_value',
+                'Start Date': 'start_date',
+                'End Date': 'end_date',
+                'Exit Load Flag': 'exit_load_flag',
+                'Exit Load': 'exit_load',
+                'Lock-in Period Flag': 'lockin_period_flag',
+                'Lock-in Period': 'lockin_period',
+                'Channel Partner Code': 'channel_partner_code',
+                'ReOpening Date': 'reopening_date'
+            }
+            
+            # Process each row
+            for index, row in df.iterrows():
+                try:
+                    # Check if required fields are present
+                    unique_no = row.get('Unique No')
+                    scheme_code = row.get('Scheme Code')
+                    isin = row.get('ISIN')
+                    
+                    if pd.isna(unique_no) or pd.isna(scheme_code) or pd.isna(isin):
+                        stats['rows_skipped'] += 1
+                        logger.warning(f"Skipping row {index}: Missing required fields")
+                        continue
+                    
+                    # Check if scheme already exists
+                    existing_scheme = BSEScheme.query.filter_by(unique_no=int(unique_no)).first()
+                    
+                    if existing_scheme:
+                        scheme = existing_scheme
+                        is_update = True
+                    else:
+                        scheme = BSEScheme()
+                        is_update = False
+                    
+                    # Set all fields
+                    scheme.unique_no = int(unique_no)
+                    scheme.scheme_code = str(row.get('Scheme Code', ''))
+                    scheme.rta_scheme_code = str(row.get('RTA Scheme Code', ''))
+                    scheme.amc_scheme_code = str(row.get('AMC Scheme Code', ''))
+                    scheme.isin = str(row.get('ISIN', ''))
+                    scheme.amc_code = str(row.get('AMC Code', ''))
+                    scheme.scheme_type = str(row.get('Scheme Type', ''))
+                    scheme.scheme_plan = str(row.get('Scheme Plan', ''))
+                    scheme.scheme_name = str(row.get('Scheme Name', ''))
+                    
+                    # Purchase parameters
+                    scheme.purchase_allowed = str(row.get('Purchase Allowed', 'N'))
+                    scheme.purchase_transaction_mode = str(row.get('Purchase Transaction mode', ''))
+                    scheme.minimum_purchase_amount = float(row.get('Minimum Purchase Amount', 0))
+                    scheme.additional_purchase_amount = float(row.get('Additional Purchase Amount', 0))
+                    scheme.maximum_purchase_amount = float(row.get('Maximum Purchase Amount', 0))
+                    scheme.purchase_amount_multiplier = float(row.get('Purchase Amount Multiplier', 0))
+                    scheme.purchase_cutoff_time = str(row.get('Purchase Cutoff Time', ''))
+                    
+                    # Redemption parameters
+                    scheme.redemption_allowed = str(row.get('Redemption Allowed', 'N'))
+                    scheme.redemption_transaction_mode = str(row.get('Redemption Transaction Mode', ''))
+                    scheme.minimum_redemption_qty = float(row.get('Minimum Redemption Qty', 0))
+                    scheme.redemption_qty_multiplier = float(row.get('Redemption Qty Multiplier', 0))
+                    scheme.maximum_redemption_qty = float(row.get('Maximum Redemption Qty', 0))
+                    scheme.redemption_amount_minimum = float(row.get('Redemption Amount - Minimum', 0))
+                    scheme.redemption_amount_maximum = float(row.get('Redemption Amount – Maximum', 0))
+                    scheme.redemption_amount_multiple = float(row.get('Redemption Amount Multiple', 0))
+                    scheme.redemption_cutoff_time = str(row.get('Redemption Cut off Time', ''))
+                    
+                    # Operational details
+                    scheme.rta_agent_code = str(row.get('RTA Agent Code', ''))
+                    scheme.amc_active_flag = int(row.get('AMC Active Flag', 0))
+                    scheme.dividend_reinvestment_flag = str(row.get('Dividend Reinvestment Flag', 'N'))
+                    
+                    # Transaction flags
+                    scheme.sip_flag = str(row.get('SIP FLAG', 'N'))
+                    scheme.stp_flag = str(row.get('STP FLAG', 'N'))
+                    scheme.swp_flag = str(row.get('SWP Flag', 'N'))
+                    scheme.switch_flag = str(row.get('Switch FLAG', 'N'))
+                    
+                    # Settlement and operational parameters
+                    scheme.settlement_type = str(row.get('SETTLEMENT TYPE', ''))
+                    amc_ind_val = row.get('AMC_IND')
+                    scheme.amc_ind = float(amc_ind_val) if pd.notna(amc_ind_val) else None
+                    scheme.face_value = float(row.get('Face Value', 0))
+                    
+                    # Date fields
+                    scheme.start_date = self._parse_date(row.get('Start Date'))
+                    scheme.end_date = self._parse_date(row.get('End Date'))
+                    reopening_date = row.get('ReOpening Date')
+                    scheme.reopening_date = self._parse_date(reopening_date) if pd.notna(reopening_date) else None
+                    
+                    # Exit load and lock-in details
+                    exit_load_flag = row.get('Exit Load Flag')
+                    scheme.exit_load_flag = str(exit_load_flag) if pd.notna(exit_load_flag) else None
+                    scheme.exit_load = str(row.get('Exit Load', ''))
+                    lockin_flag = row.get('Lock-in Period Flag')
+                    scheme.lockin_period_flag = str(lockin_flag) if pd.notna(lockin_flag) else None
+                    lockin_period = row.get('Lock-in Period')
+                    scheme.lockin_period = float(lockin_period) if pd.notna(lockin_period) else None
+                    
+                    # Channel and distribution
+                    scheme.channel_partner_code = str(row.get('Channel Partner Code', ''))
+                    
+                    if not is_update:
+                        db.session.add(scheme)
+                        stats['schemes_created'] += 1
+                    else:
+                        stats['schemes_updated'] += 1
+                    
+                    batch_count += 1
+                    
+                    # Commit in batches
+                    if batch_count >= batch_size:
+                        db.session.commit()
+                        batch_count = 0
+                        logger.info(f"Committed batch of {batch_size} BSE scheme records")
+                        
+                except Exception as e:
+                    error_msg = f"Error processing row {index}: {str(e)}"
+                    logger.error(error_msg)
+                    stats['errors'].append(error_msg)
+                    stats['rows_skipped'] += 1
+                    continue
+            
+            # Commit remaining records
+            if batch_count > 0:
+                db.session.commit()
+            
+            logger.info(f"BSE scheme import completed: {stats}")
+            
+            return stats
+            
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error importing BSE scheme data: {e}")
             raise

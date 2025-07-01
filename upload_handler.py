@@ -66,15 +66,25 @@ def upload_file():
             logger.info(f"Reading file: {file.filename}")
             
             # Read file based on extension
-            file_extension = file.filename.rsplit('.', 1)[1].lower()
-            if file_extension == 'csv':
-                # Special handling for BSE scheme CSV files
-                if file_type == 'bse_scheme':
-                    df = read_bse_csv(file)
+            if file.filename:
+                file_extension = file.filename.rsplit('.', 1)[1].lower()
+                if file_extension == 'csv':
+                    # Special handling for BSE scheme CSV files
+                    if file_type == 'bse_scheme':
+                        df = read_bse_csv(file)
+                    else:
+                        # Save to temp file for regular CSV processing
+                        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.csv')
+                        file.save(temp_file.name)
+                        temp_file.close()
+                        try:
+                            df = pd.read_csv(temp_file.name)
+                        finally:
+                            os.unlink(temp_file.name)
                 else:
-                    df = pd.read_csv(file)
+                    df = pd.read_excel(file)
             else:
-                df = pd.read_excel(file)
+                return jsonify({'error': 'Invalid filename'}), 400
                 
             logger.info(f"Successfully read file with {len(df)} rows and {len(df.columns)} columns")
             
