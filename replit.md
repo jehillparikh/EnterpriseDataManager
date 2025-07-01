@@ -185,6 +185,12 @@ The application uses a PostgreSQL database with the following key architectural 
   - Added BSEScheme model with 43 fields covering all BSE operational parameters
   - Includes transaction limits, flags, dates, exit loads, and lock-in periods
   - Added smart helper methods for checking active status and transaction availability
+- July 1, 2025: Integrated BSE scheme CSV upload and API endpoints
+  - Enhanced upload handler to support CSV files with pipe-separated values
+  - Added BSE scheme import functionality to FundDataImporter with batch processing
+  - Created comprehensive BSE scheme API endpoints with filtering and detailed views
+  - Updated dashboard interface to include BSE scheme data type option
+  - Added interactive API testing for BSE scheme endpoints with transaction flag summaries
 
 ## User Preferences
 
