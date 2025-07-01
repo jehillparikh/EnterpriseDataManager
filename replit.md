@@ -196,6 +196,7 @@ The application uses a PostgreSQL database with the following key architectural 
   - Updated FundDataImporter to handle new column structure with backward compatibility
   - Enhanced all API endpoints to return comprehensive factsheet data including financial details, investment terms, management info, and risk categories
   - Maintains legacy field support for existing data while adding new structured fields
+  - Removed redundant AUM field from FundFactSheet model since core fund information is already captured in the Fund table
 
 ## User Preferences
 

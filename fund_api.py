@@ -119,7 +119,6 @@ def get_fund_factsheet(isin):
             'benchmark': factsheet.benchmark,
             'sebi_risk_category': factsheet.sebi_risk_category,
             # Legacy fields
-            'aum': factsheet.aum,
             'launch_date': factsheet.launch_date.isoformat() if factsheet.launch_date else None,
             'last_updated': factsheet.last_updated.isoformat() if factsheet.last_updated else None
         }
@@ -304,7 +303,6 @@ def get_fund_all(isin):
                 'benchmark': factsheet.benchmark,
                 'sebi_risk_category': factsheet.sebi_risk_category,
                 # Legacy fields
-                'aum': factsheet.aum,
                 'launch_date': factsheet.launch_date.isoformat() if factsheet.launch_date else None,
                 'last_updated': factsheet.last_updated.isoformat() if factsheet.last_updated else None
             }
@@ -384,7 +382,6 @@ def get_fund_complete(isin):
                 'benchmark': factsheet.benchmark,
                 'sebi_risk_category': factsheet.sebi_risk_category,
                 # Legacy fields
-                'aum': factsheet.aum,
                 'launch_date': factsheet.launch_date.isoformat() if factsheet.launch_date else None,
                 'last_updated': factsheet.last_updated.isoformat() if factsheet.last_updated else None
             }

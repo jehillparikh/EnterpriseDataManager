@@ -175,7 +175,6 @@ class FundDataImporter:
                             'benchmark': benchmark,
                             'sebi_risk_category': sebi_risk_category,
                             # Legacy fields for backward compatibility
-                            'aum': aum,
                             'launch_date': launch_date
                         }
                         factsheet_records.append(factsheet_record)
