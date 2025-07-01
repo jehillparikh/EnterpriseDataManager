@@ -178,6 +178,13 @@ The application uses a PostgreSQL database with the following key architectural 
   - Enhanced clear data functionality with comprehensive warning system
   - Added confirmation dialog and visual warnings for data clearing operations
   - Improved batch processing with detailed statistics tracking
+- July 1, 2025: Created comprehensive fund analysis toolkit
+  - Added analytics_generator.py for institutional-grade fund analytics by ISIN
+  - Created portfolio_overlap_analyzer.py for multi-fund overlap analysis
+  - Implemented fund_comparison_tool.py for detailed fund comparisons
+  - Added BSEScheme model with 43 fields covering all BSE operational parameters
+  - Includes transaction limits, flags, dates, exit loads, and lock-in periods
+  - Added smart helper methods for checking active status and transaction availability
 
 ## User Preferences
 

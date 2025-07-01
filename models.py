@@ -338,3 +338,191 @@ class FundCodeLookup(db.Model):
         Index('idx_code_morningstar', 'morningstar_id'),
         Index('idx_code_valueresearch', 'valueresearch_id'),
     )
+
+
+class BSEScheme(db.Model):
+    """
+    BSE Scheme details with comprehensive transaction and operational parameters
+    Contains all BSE-specific scheme information for trading and operations
+    """
+    __tablename__ = 'mf_bse_scheme'
+    
+    # Primary identifiers
+    id = db.Column(db.Integer, primary_key=True)
+    unique_no = db.Column(db.Integer, nullable=False, unique=True, index=True)
+    scheme_code = db.Column(db.String(20), nullable=False, index=True)
+    rta_scheme_code = db.Column(db.String(20), nullable=False)
+    amc_scheme_code = db.Column(db.String(20), nullable=False)
+    isin = db.Column(db.String(12), nullable=False, index=True)
+    amc_code = db.Column(db.String(10), nullable=False, index=True)
+    
+    # Scheme basic information
+    scheme_type = db.Column(db.String(50), nullable=False)
+    scheme_plan = db.Column(db.String(50), nullable=False)
+    scheme_name = db.Column(db.String(255), nullable=False)
+    
+    # Purchase parameters
+    purchase_allowed = db.Column(db.String(10), nullable=False)  # Y/N
+    purchase_transaction_mode = db.Column(db.String(50), nullable=False)
+    minimum_purchase_amount = db.Column(db.Numeric(15, 2), nullable=False)
+    additional_purchase_amount = db.Column(db.Numeric(15, 2), nullable=False)
+    maximum_purchase_amount = db.Column(db.Numeric(15, 2), nullable=False)
+    purchase_amount_multiplier = db.Column(db.Numeric(15, 2), nullable=False)
+    purchase_cutoff_time = db.Column(db.String(20), nullable=False)
+    
+    # Redemption parameters
+    redemption_allowed = db.Column(db.String(10), nullable=False)  # Y/N
+    redemption_transaction_mode = db.Column(db.String(50), nullable=False)
+    minimum_redemption_qty = db.Column(db.Numeric(15, 4), nullable=False)
+    redemption_qty_multiplier = db.Column(db.Numeric(15, 4), nullable=False)
+    maximum_redemption_qty = db.Column(db.Numeric(15, 4), nullable=False)
+    redemption_amount_minimum = db.Column(db.Numeric(15, 2), nullable=False)
+    redemption_amount_maximum = db.Column(db.Numeric(15, 2), nullable=False)
+    redemption_amount_multiple = db.Column(db.Numeric(15, 2), nullable=False)
+    redemption_cutoff_time = db.Column(db.String(20), nullable=False)
+    
+    # Operational details
+    rta_agent_code = db.Column(db.String(20), nullable=False)
+    amc_active_flag = db.Column(db.Integer, nullable=False)  # 0/1
+    dividend_reinvestment_flag = db.Column(db.String(10), nullable=False)  # Y/N
+    
+    # Transaction flags
+    sip_flag = db.Column(db.String(10), nullable=False)  # Y/N
+    stp_flag = db.Column(db.String(10), nullable=False)  # Y/N
+    swp_flag = db.Column(db.String(10), nullable=False)  # Y/N
+    switch_flag = db.Column(db.String(10), nullable=False)  # Y/N
+    
+    # Settlement and operational parameters
+    settlement_type = db.Column(db.String(20), nullable=False)
+    amc_ind = db.Column(db.Numeric(10, 2), nullable=True)  # Mostly null values
+    face_value = db.Column(db.Numeric(10, 2), nullable=False)
+    
+    # Date fields
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    reopening_date = db.Column(db.Date, nullable=True)  # Many null values
+    
+    # Exit load and lock-in details
+    exit_load_flag = db.Column(db.String(10), nullable=True)  # Y/N, some nulls
+    exit_load = db.Column(db.String(255), nullable=False)  # Can contain complex text
+    lockin_period_flag = db.Column(db.String(10), nullable=True)  # Y/N, some nulls
+    lockin_period = db.Column(db.Numeric(10, 0), nullable=True)  # Days, some nulls
+    
+    # Channel and distribution
+    channel_partner_code = db.Column(db.String(20), nullable=False)
+    
+    # Timestamps for tracking
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Indexes for performance
+    __table_args__ = (
+        db.Index('idx_bse_scheme_isin_amc', 'isin', 'amc_code'),
+        db.Index('idx_bse_scheme_type_plan', 'scheme_type', 'scheme_plan'),
+        db.Index('idx_bse_scheme_active', 'amc_active_flag'),
+        db.Index('idx_bse_scheme_purchase_allowed', 'purchase_allowed'),
+        db.Index('idx_bse_scheme_dates', 'start_date', 'end_date'),
+    )
+    
+    def __repr__(self):
+        return f'<BSEScheme {self.scheme_code}: {self.scheme_name[:50]}>'
+    
+    def is_active(self):
+        """Check if scheme is currently active"""
+        today = datetime.utcnow().date()
+        return (self.amc_active_flag == 1 and 
+                self.start_date <= today <= self.end_date)
+    
+    def is_purchase_allowed(self):
+        """Check if purchase is allowed"""
+        return self.purchase_allowed.upper() == 'Y' and self.is_active()
+    
+    def is_redemption_allowed(self):
+        """Check if redemption is allowed"""
+        return self.redemption_allowed.upper() == 'Y' and self.is_active()
+    
+    def has_sip(self):
+        """Check if SIP is available"""
+        return self.sip_flag.upper() == 'Y'
+    
+    def has_stp(self):
+        """Check if STP is available"""
+        return self.stp_flag.upper() == 'Y'
+    
+    def has_swp(self):
+        """Check if SWP is available"""
+        return self.swp_flag.upper() == 'Y'
+    
+    def has_switch(self):
+        """Check if switch is available"""
+        return self.switch_flag.upper() == 'Y'
+    
+    def has_exit_load(self):
+        """Check if exit load is applicable"""
+        return (self.exit_load_flag and 
+                self.exit_load_flag.upper() == 'Y' and 
+                self.exit_load.strip() not in ['', 'NIL', 'nil', 'Nil'])
+    
+    def has_lockin_period(self):
+        """Check if lock-in period is applicable"""
+        return (self.lockin_period_flag and 
+                self.lockin_period_flag.upper() == 'Y' and 
+                self.lockin_period and 
+                self.lockin_period > 0)
+    
+    def to_dict(self):
+        """Convert model to dictionary for API responses"""
+        return {
+            'unique_no': self.unique_no,
+            'scheme_code': self.scheme_code,
+            'rta_scheme_code': self.rta_scheme_code,
+            'amc_scheme_code': self.amc_scheme_code,
+            'isin': self.isin,
+            'amc_code': self.amc_code,
+            'scheme_type': self.scheme_type,
+            'scheme_plan': self.scheme_plan,
+            'scheme_name': self.scheme_name,
+            'purchase_allowed': self.purchase_allowed,
+            'purchase_transaction_mode': self.purchase_transaction_mode,
+            'minimum_purchase_amount': float(self.minimum_purchase_amount),
+            'additional_purchase_amount': float(self.additional_purchase_amount),
+            'maximum_purchase_amount': float(self.maximum_purchase_amount),
+            'purchase_amount_multiplier': float(self.purchase_amount_multiplier),
+            'purchase_cutoff_time': self.purchase_cutoff_time,
+            'redemption_allowed': self.redemption_allowed,
+            'redemption_transaction_mode': self.redemption_transaction_mode,
+            'minimum_redemption_qty': float(self.minimum_redemption_qty),
+            'redemption_qty_multiplier': float(self.redemption_qty_multiplier),
+            'maximum_redemption_qty': float(self.maximum_redemption_qty),
+            'redemption_amount_minimum': float(self.redemption_amount_minimum),
+            'redemption_amount_maximum': float(self.redemption_amount_maximum),
+            'redemption_amount_multiple': float(self.redemption_amount_multiple),
+            'redemption_cutoff_time': self.redemption_cutoff_time,
+            'rta_agent_code': self.rta_agent_code,
+            'amc_active_flag': self.amc_active_flag,
+            'dividend_reinvestment_flag': self.dividend_reinvestment_flag,
+            'sip_flag': self.sip_flag,
+            'stp_flag': self.stp_flag,
+            'swp_flag': self.swp_flag,
+            'switch_flag': self.switch_flag,
+            'settlement_type': self.settlement_type,
+            'amc_ind': float(self.amc_ind) if self.amc_ind else None,
+            'face_value': float(self.face_value),
+            'start_date': self.start_date.isoformat(),
+            'end_date': self.end_date.isoformat(),
+            'reopening_date': self.reopening_date.isoformat() if self.reopening_date else None,
+            'exit_load_flag': self.exit_load_flag,
+            'exit_load': self.exit_load,
+            'lockin_period_flag': self.lockin_period_flag,
+            'lockin_period': float(self.lockin_period) if self.lockin_period else None,
+            'channel_partner_code': self.channel_partner_code,
+            'is_active': self.is_active(),
+            'purchase_allowed_status': self.is_purchase_allowed(),
+            'redemption_allowed_status': self.is_redemption_allowed(),
+            'has_sip': self.has_sip(),
+            'has_stp': self.has_stp(),
+            'has_swp': self.has_swp(),
+            'has_switch': self.has_switch(),
+            'has_exit_load': self.has_exit_load(),
+            'has_lockin_period': self.has_lockin_period()
+        }

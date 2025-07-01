@@ -1,0 +1,43 @@
+ 0   Unique No                    24099 non-null  int64  
+ 1   Scheme Code                  24099 non-null  object 
+ 2   RTA Scheme Code              24099 non-null  object 
+ 3   AMC Scheme Code              24099 non-null  object 
+ 4   ISIN                         24099 non-null  object 
+ 5   AMC Code                     24099 non-null  object 
+ 6   Scheme Type                  24099 non-null  object 
+ 7   Scheme Plan                  24099 non-null  object 
+ 8   Scheme Name                  24099 non-null  object 
+ 9   Purchase Allowed             24099 non-null  object 
+ 10  Purchase Transaction mode    24099 non-null  object 
+ 11  Minimum Purchase Amount      24099 non-null  float64
+ 12  Additional Purchase Amount   24099 non-null  float64
+ 13  Maximum Purchase Amount      24099 non-null  float64
+ 14  Purchase Amount Multiplier   24099 non-null  float64
+ 15  Purchase Cutoff Time         24099 non-null  object 
+ 16  Redemption Allowed           24099 non-null  object 
+ 17  Redemption Transaction Mode  24099 non-null  object 
+ 18  Minimum Redemption Qty       24099 non-null  float64
+ 19  Redemption Qty Multiplier    24099 non-null  float64
+ 20  Maximum Redemption Qty       24099 non-null  float64
+ 21  Redemption Amount - Minimum  24099 non-null  float64
+ 22  Redemption Amount – Maximum  24099 non-null  float64
+ 23  Redemption Amount Multiple   24099 non-null  float64
+ 24  Redemption Cut off Time      24099 non-null  object 
+ 25  RTA Agent Code               24099 non-null  object 
+ 26  AMC Active Flag              24099 non-null  int64  
+ 27  Dividend Reinvestment Flag   24099 non-null  object 
+ 28  SIP FLAG                     24099 non-null  object 
+ 29  STP FLAG                     24099 non-null  object 
+ 30  SWP Flag                     24099 non-null  object 
+ 31  Switch FLAG                  24099 non-null  object 
+ 32  SETTLEMENT TYPE              24099 non-null  object 
+ 33  AMC_IND                      0 non-null      float64
+ 34  Face Value                   24099 non-null  float64
+ 35  Start Date                   24099 non-null  object 
+ 36  End Date                     24099 non-null  object 
+ 37  Exit Load Flag               23852 non-null  object 
+ 38  Exit Load                    24099 non-null  object 
+ 39  Lock-in Period Flag          23852 non-null  object 
+ 40  Lock-in Period               23852 non-null  float64
+ 41  Channel Partner Code         24099 non-null  object 
+ 42  ReOpening Date               8405 non-null   object 

@@ -5,8 +5,7 @@ from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase, registry
 from flask_sqlalchemy import SQLAlchemy
 from config import SQLConfig
-import config 
-
+import config
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -48,9 +47,8 @@ def create_app():
     # Configure database - prioritize Google Cloud SQL
     #database_uri = os.environ.get('GOOGLE_CLOUD_DATABASE_URL').strip()
 
-    database_uri=SQLConfig.get_database_uri()
+    database_uri = SQLConfig.get_database_uri()
 
-    
     print(f"Database URI: {database_uri}")
 
     if database_uri:

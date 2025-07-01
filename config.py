@@ -25,13 +25,11 @@ PORT = int(os.environ.get('PORT', 5000))
 
 # SQLonfig.py
 class SQLConfig:
-  """Configuration for PostgreSQL database connection."""
-
-  DB_USER = os.getenv("DB_USER", "postgres").strip()
-  DB_PASSWORD = os.getenv("DB_PASSWORD", "mutual%40fund%40pro12").strip()
-  DB_HOST = os.getenv("DB_HOST", "34.57.196.130").strip()
-  DB_PORT = os.getenv("DB_PORT", "5432").strip()
-  DB_NAME = os.getenv("DB_NAME", "mutualfundpro").strip()
+  DB_USER = os.environ["DB_USER"]
+  DB_PASSWORD = os.environ["DB_PASSWORD"]
+  DB_HOST = os.environ["DB_HOST"]
+  DB_PORT = os.environ["DB_PORT"]
+  DB_NAME = os.environ["DB_NAME"]
 
   @classmethod
   def get_database_uri(cls) -> str:
