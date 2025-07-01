@@ -118,17 +118,11 @@ class FundDataImporter:
                         if not isin or isin.lower() == 'nan':
                             continue
 
-                        # Extract fund data
+                        # Extract fund data - using new column structure
                         scheme_name = str(row.get('Scheme Name', '')).strip()
-                        fund_type = str(
-                            row.get('Fund Type', row.get('Type', ''))).strip()
-                        fund_subtype = str(
-                            row.get('Fund Sub Type', row.get(
-                                'Subtype', ''))).strip() if not pd.isna(
-                                    row.get('Fund Sub Type',
-                                            row.get('Subtype'))) else None
-                        amc_name = str(row.get('AMC Name',
-                                               row.get('AMC', ''))).strip()
+                        fund_type = str(row.get('Scheme Type', row.get('Fund Type', row.get('Type', '')))).strip()
+                        fund_subtype = str(row.get('Sub Category', row.get('Fund Sub Type', row.get('Subtype', '')))).strip() if not pd.isna(row.get('Sub Category', row.get('Fund Sub Type', row.get('Subtype')))) else None
+                        amc_name = str(row.get('AMC', row.get('AMC Name', ''))).strip()
 
                         fund_record = {
                             'isin': isin,
@@ -139,32 +133,51 @@ class FundDataImporter:
                         }
                         fund_records.append(fund_record)
 
-                        # Extract factsheet data
-                        fund_manager = str(
-                            row.get('Fund Manager',
-                                    row.get('Fund Manager(s)', ''))
-                        ).strip() if not pd.isna(
-                            row.get('Fund Manager',
-                                    row.get('Fund Manager(s)'))) else None
-                        aum = float(row.get('AUM', row.get(
-                            'AUM (₹ Cr)', 0))) if not pd.isna(
-                                row.get('AUM',
-                                        row.get('AUM (₹ Cr)'))) else None
-                        expense_ratio = float(row.get(
-                            'Expense Ratio', 0)) if not pd.isna(
-                                row.get('Expense Ratio')) else None
+                        # Extract enhanced factsheet data - supporting new column structure
+                        # Core fund information
+                        factsheet_scheme_name = str(row.get('Scheme Name', '')).strip() if not pd.isna(row.get('Scheme Name')) else None
+                        scheme_type = str(row.get('Scheme Type', '')).strip() if not pd.isna(row.get('Scheme Type')) else None
+                        sub_category = str(row.get('Sub Category', '')).strip() if not pd.isna(row.get('Sub Category')) else None
+                        plan = str(row.get('Plan', '')).strip() if not pd.isna(row.get('Plan')) else None
+                        amc = str(row.get('AMC', '')).strip() if not pd.isna(row.get('AMC')) else None
+                        
+                        # Financial details
+                        expense_ratio = float(row.get('Expense Ratio', 0)) if not pd.isna(row.get('Expense Ratio')) else None
+                        minimum_lumpsum = float(row.get('Minimum Lumpsum', 0)) if not pd.isna(row.get('Minimum Lumpsum')) else None
+                        minimum_sip = float(row.get('Minimum SIP', 0)) if not pd.isna(row.get('Minimum SIP')) else None
+                        
+                        # Investment terms
+                        lock_in = str(row.get('Lock-in', '')).strip() if not pd.isna(row.get('Lock-in')) else None
+                        exit_load = str(row.get('Exit Load', '')).strip() if not pd.isna(row.get('Exit Load')) else None
+                        
+                        # Management and risk
+                        fund_manager = str(row.get('Fund Manager', '')).strip() if not pd.isna(row.get('Fund Manager')) else None
+                        benchmark = str(row.get('Benchmark', '')).strip() if not pd.isna(row.get('Benchmark')) else None
+                        sebi_risk_category = str(row.get('SEBI Risk Category', '')).strip() if not pd.isna(row.get('SEBI Risk Category')) else None
+                        
+                        # Legacy fields for backward compatibility
+                        aum = float(row.get('AUM', row.get('AUM (₹ Cr)', 0))) if not pd.isna(row.get('AUM', row.get('AUM (₹ Cr)'))) else None
                         launch_date = self._parse_date(row.get('Launch Date'))
-                        exit_load = str(row.get(
-                            'Exit Load', '')).strip() if not pd.isna(
-                                row.get('Exit Load')) else None
 
                         factsheet_record = {
                             'isin': isin,
-                            'fund_manager': fund_manager,
-                            'aum': aum,
+                            # Enhanced fields from new column structure
+                            'scheme_name': factsheet_scheme_name,
+                            'scheme_type': scheme_type,
+                            'sub_category': sub_category,
+                            'plan': plan,
+                            'amc': amc,
                             'expense_ratio': expense_ratio,
-                            'launch_date': launch_date,
-                            'exit_load': exit_load
+                            'minimum_lumpsum': minimum_lumpsum,
+                            'minimum_sip': minimum_sip,
+                            'lock_in': lock_in,
+                            'exit_load': exit_load,
+                            'fund_manager': fund_manager,
+                            'benchmark': benchmark,
+                            'sebi_risk_category': sebi_risk_category,
+                            # Legacy fields for backward compatibility
+                            'aum': aum,
+                            'launch_date': launch_date
                         }
                         factsheet_records.append(factsheet_record)
 

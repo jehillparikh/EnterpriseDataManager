@@ -30,26 +30,57 @@ class Fund(db.Model):
 
 class FundFactSheet(db.Model):
     """
-    Factsheet information for a mutual fund
+    Enhanced factsheet information for a mutual fund
+    Supports Excel columns: Scheme Name, Scheme Type, Sub Category, Plan, 
+    Expense Ratio, AMC, Benchmark, Minimum Lumpsum, Lock-in, Exit Load, 
+    Fund Manager, Minimum SIP, SEBI Risk Category, ISIN
     """
     __tablename__ = 'mf_factsheet'
 
     isin = db.Column(db.String(12),
                      db.ForeignKey('mf_fund.isin'),
                      primary_key=True)
-    fund_manager = db.Column(db.String(255), nullable=True)
-    aum = db.Column(db.Float,
-                    nullable=True)  # Assets Under Management in Crores
-    expense_ratio = db.Column(db.Float,
-                              nullable=True)  # Expense Ratio percentage
+    
+    # Core fund information
+    scheme_name = db.Column(db.String(255), nullable=True)  # From 'Scheme Name'
+    scheme_type = db.Column(db.String(100), nullable=True)  # From 'Scheme Type'
+    sub_category = db.Column(db.String(100), nullable=True)  # From 'Sub Category'
+    plan = db.Column(db.String(50), nullable=True)  # From 'Plan' (Growth/Dividend)
+    amc = db.Column(db.String(100), nullable=True)  # From 'AMC' (Asset Management Company)
+    
+    # Financial details
+    expense_ratio = db.Column(db.Float, nullable=True)  # From 'Expense Ratio' percentage
+    minimum_lumpsum = db.Column(db.Float, nullable=True)  # From 'Minimum Lumpsum'
+    minimum_sip = db.Column(db.Float, nullable=True)  # From 'Minimum SIP'
+    
+    # Investment terms
+    lock_in = db.Column(db.String(100), nullable=True)  # From 'Lock-in' period
+    exit_load = db.Column(db.String(255), nullable=True)  # From 'Exit Load' details
+    
+    # Management and risk
+    fund_manager = db.Column(db.String(255), nullable=True)  # From 'Fund Manager'
+    benchmark = db.Column(db.String(255), nullable=True)  # From 'Benchmark'
+    sebi_risk_category = db.Column(db.String(50), nullable=True)  # From 'SEBI Risk Category'
+    
+    # Legacy fields (for backward compatibility)
+    aum = db.Column(db.Float, nullable=True)  # Assets Under Management in Crores
     launch_date = db.Column(db.Date, nullable=True)  # Launch date of the fund
-    exit_load = db.Column(db.String(255), nullable=True)  # Exit load details
+    
+    # Metadata
     last_updated = db.Column(db.DateTime,
                              default=datetime.utcnow,
                              onupdate=datetime.utcnow)
 
     # Relationship to Fund
     fund = db.relationship("Fund", backref="factsheet")
+    
+    # Index for common searches
+    __table_args__ = (
+        Index('idx_factsheet_scheme_type', 'scheme_type'),
+        Index('idx_factsheet_sub_category', 'sub_category'),
+        Index('idx_factsheet_amc', 'amc'),
+        Index('idx_factsheet_sebi_risk', 'sebi_risk_category'),
+    )
 
 
 class FundReturns(db.Model):
