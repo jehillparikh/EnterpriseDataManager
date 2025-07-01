@@ -286,11 +286,26 @@ def get_fund_all(isin):
         factsheet_data = None
         if factsheet:
             factsheet_data = {
-                'fund_manager': factsheet.fund_manager,
-                'aum': factsheet.aum,
+                # Core fund information
+                'scheme_name': factsheet.scheme_name,
+                'scheme_type': factsheet.scheme_type,
+                'sub_category': factsheet.sub_category,
+                'plan': factsheet.plan,
+                'amc': factsheet.amc,
+                # Financial details
                 'expense_ratio': factsheet.expense_ratio,
-                'launch_date': factsheet.launch_date.isoformat() if factsheet.launch_date else None,
+                'minimum_lumpsum': factsheet.minimum_lumpsum,
+                'minimum_sip': factsheet.minimum_sip,
+                # Investment terms
+                'lock_in': factsheet.lock_in,
                 'exit_load': factsheet.exit_load,
+                # Management and risk
+                'fund_manager': factsheet.fund_manager,
+                'benchmark': factsheet.benchmark,
+                'sebi_risk_category': factsheet.sebi_risk_category,
+                # Legacy fields
+                'aum': factsheet.aum,
+                'launch_date': factsheet.launch_date.isoformat() if factsheet.launch_date else None,
                 'last_updated': factsheet.last_updated.isoformat() if factsheet.last_updated else None
             }
         
@@ -351,11 +366,26 @@ def get_fund_complete(isin):
         factsheet_data = None
         if factsheet:
             factsheet_data = {
-                'fund_manager': factsheet.fund_manager,
-                'aum': factsheet.aum,
+                # Core fund information
+                'scheme_name': factsheet.scheme_name,
+                'scheme_type': factsheet.scheme_type,
+                'sub_category': factsheet.sub_category,
+                'plan': factsheet.plan,
+                'amc': factsheet.amc,
+                # Financial details
                 'expense_ratio': factsheet.expense_ratio,
-                'launch_date': factsheet.launch_date.isoformat() if factsheet.launch_date else None,
+                'minimum_lumpsum': factsheet.minimum_lumpsum,
+                'minimum_sip': factsheet.minimum_sip,
+                # Investment terms
+                'lock_in': factsheet.lock_in,
                 'exit_load': factsheet.exit_load,
+                # Management and risk
+                'fund_manager': factsheet.fund_manager,
+                'benchmark': factsheet.benchmark,
+                'sebi_risk_category': factsheet.sebi_risk_category,
+                # Legacy fields
+                'aum': factsheet.aum,
+                'launch_date': factsheet.launch_date.isoformat() if factsheet.launch_date else None,
                 'last_updated': factsheet.last_updated.isoformat() if factsheet.last_updated else None
             }
         

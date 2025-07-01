@@ -191,6 +191,11 @@ The application uses a PostgreSQL database with the following key architectural 
   - Created comprehensive BSE scheme API endpoints with filtering and detailed views
   - Updated dashboard interface to include BSE scheme data type option
   - Added interactive API testing for BSE scheme endpoints with transaction flag summaries
+- July 1, 2025: Enhanced FundFactSheet model for standardized Excel imports
+  - Expanded model to support 14 standard Excel columns: Scheme Name, Scheme Type, Sub Category, Plan, Expense Ratio, AMC, Benchmark, Minimum Lumpsum, Lock-in, Exit Load, Fund Manager, Minimum SIP, SEBI Risk Category, ISIN
+  - Updated FundDataImporter to handle new column structure with backward compatibility
+  - Enhanced all API endpoints to return comprehensive factsheet data including financial details, investment terms, management info, and risk categories
+  - Maintains legacy field support for existing data while adding new structured fields
 
 ## User Preferences
 
