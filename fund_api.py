@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from models import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory
+from models import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory, BSEScheme
 from setup_db import db
 import logging
 
@@ -458,6 +458,204 @@ def get_fund_complete(isin):
         return jsonify(response), 200
     except Exception as e:
         logger.error(f"Error getting complete data for fund {isin}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# BSE Scheme API Endpoints
+
+@fund_api.route('/api/bse-schemes', methods=['GET'])
+def get_bse_schemes():
+    """Get BSE schemes with filtering options"""
+    try:
+        # Get query parameters
+        scheme_name = request.args.get('scheme_name')
+        amc_code = request.args.get('amc_code')
+        isin = request.args.get('isin')
+        scheme_type = request.args.get('scheme_type')
+        active_only = request.args.get('active_only', 'false').lower() == 'true'
+        purchase_allowed = request.args.get('purchase_allowed', 'false').lower() == 'true'
+        
+        # Base query
+        query = BSEScheme.query
+        
+        # Apply filters
+        if scheme_name:
+            query = query.filter(BSEScheme.scheme_name.ilike(f'%{scheme_name}%'))
+        if amc_code:
+            query = query.filter(BSEScheme.amc_code == amc_code)
+        if isin:
+            query = query.filter(BSEScheme.isin == isin)
+        if scheme_type:
+            query = query.filter(BSEScheme.scheme_type.ilike(f'%{scheme_type}%'))
+        if active_only:
+            query = query.filter(BSEScheme.amc_active_flag == 1)
+        if purchase_allowed:
+            query = query.filter(BSEScheme.purchase_allowed == 'Y')
+        
+        # Pagination
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        paginated_schemes = query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        # Format response
+        schemes = []
+        for scheme in paginated_schemes.items:
+            schemes.append({
+                'unique_no': scheme.unique_no,
+                'scheme_code': scheme.scheme_code,
+                'scheme_name': scheme.scheme_name,
+                'isin': scheme.isin,
+                'amc_code': scheme.amc_code,
+                'scheme_type': scheme.scheme_type,
+                'scheme_plan': scheme.scheme_plan,
+                'purchase_allowed': scheme.purchase_allowed,
+                'redemption_allowed': scheme.redemption_allowed,
+                'amc_active_flag': scheme.amc_active_flag,
+                'sip_flag': scheme.sip_flag,
+                'stp_flag': scheme.stp_flag,
+                'swp_flag': scheme.swp_flag,
+                'switch_flag': scheme.switch_flag,
+                'minimum_purchase_amount': scheme.minimum_purchase_amount,
+                'minimum_redemption_qty': scheme.minimum_redemption_qty,
+                'exit_load_flag': scheme.exit_load_flag,
+                'lockin_period_flag': scheme.lockin_period_flag
+            })
+        
+        response = {
+            'schemes': schemes,
+            'pagination': {
+                'total_items': paginated_schemes.total,
+                'total_pages': paginated_schemes.pages,
+                'current_page': paginated_schemes.page,
+                'per_page': paginated_schemes.per_page,
+                'has_next': paginated_schemes.has_next,
+                'has_prev': paginated_schemes.has_prev
+            }
+        }
+        
+        return jsonify(response), 200
+    except Exception as e:
+        logger.error(f"Error getting BSE schemes: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@fund_api.route('/api/bse-schemes/<int:unique_no>', methods=['GET'])
+def get_bse_scheme(unique_no):
+    """Get BSE scheme by unique number"""
+    try:
+        scheme = BSEScheme.query.filter_by(unique_no=unique_no).first()
+        
+        if not scheme:
+            return jsonify({'error': 'BSE scheme not found'}), 404
+        
+        # Format complete scheme data
+        scheme_data = {
+            'unique_no': scheme.unique_no,
+            'scheme_code': scheme.scheme_code,
+            'rta_scheme_code': scheme.rta_scheme_code,
+            'amc_scheme_code': scheme.amc_scheme_code,
+            'isin': scheme.isin,
+            'amc_code': scheme.amc_code,
+            'scheme_type': scheme.scheme_type,
+            'scheme_plan': scheme.scheme_plan,
+            'scheme_name': scheme.scheme_name,
+            'purchase_details': {
+                'purchase_allowed': scheme.purchase_allowed,
+                'purchase_transaction_mode': scheme.purchase_transaction_mode,
+                'minimum_purchase_amount': scheme.minimum_purchase_amount,
+                'additional_purchase_amount': scheme.additional_purchase_amount,
+                'maximum_purchase_amount': scheme.maximum_purchase_amount,
+                'purchase_amount_multiplier': scheme.purchase_amount_multiplier,
+                'purchase_cutoff_time': scheme.purchase_cutoff_time
+            },
+            'redemption_details': {
+                'redemption_allowed': scheme.redemption_allowed,
+                'redemption_transaction_mode': scheme.redemption_transaction_mode,
+                'minimum_redemption_qty': scheme.minimum_redemption_qty,
+                'redemption_qty_multiplier': scheme.redemption_qty_multiplier,
+                'maximum_redemption_qty': scheme.maximum_redemption_qty,
+                'redemption_amount_minimum': scheme.redemption_amount_minimum,
+                'redemption_amount_maximum': scheme.redemption_amount_maximum,
+                'redemption_amount_multiple': scheme.redemption_amount_multiple,
+                'redemption_cutoff_time': scheme.redemption_cutoff_time
+            },
+            'operational_details': {
+                'rta_agent_code': scheme.rta_agent_code,
+                'amc_active_flag': scheme.amc_active_flag,
+                'dividend_reinvestment_flag': scheme.dividend_reinvestment_flag,
+                'settlement_type': scheme.settlement_type,
+                'amc_ind': scheme.amc_ind,
+                'face_value': scheme.face_value,
+                'channel_partner_code': scheme.channel_partner_code
+            },
+            'transaction_flags': {
+                'sip_flag': scheme.sip_flag,
+                'stp_flag': scheme.stp_flag,
+                'swp_flag': scheme.swp_flag,
+                'switch_flag': scheme.switch_flag
+            },
+            'dates': {
+                'start_date': scheme.start_date.isoformat() if scheme.start_date else None,
+                'end_date': scheme.end_date.isoformat() if scheme.end_date else None,
+                'reopening_date': scheme.reopening_date.isoformat() if scheme.reopening_date else None
+            },
+            'exit_load_details': {
+                'exit_load_flag': scheme.exit_load_flag,
+                'exit_load': scheme.exit_load
+            },
+            'lockin_details': {
+                'lockin_period_flag': scheme.lockin_period_flag,
+                'lockin_period': scheme.lockin_period
+            }
+        }
+        
+        return jsonify(scheme_data), 200
+    except Exception as e:
+        logger.error(f"Error getting BSE scheme {unique_no}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@fund_api.route('/api/bse-schemes/by-isin/<isin>', methods=['GET'])
+def get_bse_scheme_by_isin(isin):
+    """Get BSE scheme by ISIN"""
+    try:
+        scheme = BSEScheme.query.filter_by(isin=isin).first()
+        
+        if not scheme:
+            return jsonify({'error': 'BSE scheme not found for this ISIN'}), 404
+        
+        # Return the same detailed format as get_bse_scheme
+        return get_bse_scheme(scheme.unique_no)
+    except Exception as e:
+        logger.error(f"Error getting BSE scheme by ISIN {isin}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@fund_api.route('/api/bse-schemes/transaction-flags', methods=['GET'])
+def get_bse_transaction_flags():
+    """Get BSE schemes with transaction flags summary"""
+    try:
+        schemes = BSEScheme.query.filter_by(amc_active_flag=1).all()
+        
+        # Count schemes by transaction type
+        sip_enabled = sum(1 for s in schemes if s.sip_flag == 'Y')
+        stp_enabled = sum(1 for s in schemes if s.stp_flag == 'Y')
+        swp_enabled = sum(1 for s in schemes if s.swp_flag == 'Y')
+        switch_enabled = sum(1 for s in schemes if s.switch_flag == 'Y')
+        purchase_allowed = sum(1 for s in schemes if s.purchase_allowed == 'Y')
+        redemption_allowed = sum(1 for s in schemes if s.redemption_allowed == 'Y')
+        
+        summary = {
+            'total_active_schemes': len(schemes),
+            'transaction_flags': {
+                'sip_enabled': sip_enabled,
+                'stp_enabled': stp_enabled,
+                'swp_enabled': swp_enabled,
+                'switch_enabled': switch_enabled,
+                'purchase_allowed': purchase_allowed,
+                'redemption_allowed': redemption_allowed
+            }
+        }
+        
+        return jsonify(summary), 200
+    except Exception as e:
+        logger.error(f"Error getting BSE transaction flags: {e}")
         return jsonify({'error': str(e)}), 500
 
 def init_fund_api(app):
