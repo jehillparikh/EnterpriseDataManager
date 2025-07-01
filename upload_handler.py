@@ -1,5 +1,6 @@
 import os
 import logging
+import tempfile
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 import pandas as pd
@@ -12,13 +13,30 @@ logger = logging.getLogger(__name__)
 upload_bp = Blueprint('upload', __name__)
 
 # Allowed file extensions
-ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
+ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv'}
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
     if not filename:
         return False
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def read_bse_csv(file):
+    """Read BSE scheme CSV file with specific formatting"""
+    # Save uploaded file to temporary location
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.csv')
+    file.save(temp_file.name)
+    temp_file.close()
+    
+    try:
+        # Read CSV with BSE-specific parameters
+        df = pd.read_csv(temp_file.name, sep='|', encoding='utf-8', dtype={'Exit Load': str})
+        if 'Unnamed: 43' in df.columns:
+            df = df.drop(columns=['Unnamed: 43'])
+        return df
+    finally:
+        # Clean up temporary file
+        os.unlink(temp_file.name)
 
 @upload_bp.route('/api/upload', methods=['POST'])
 def upload_file():
@@ -33,7 +51,7 @@ def upload_file():
             return jsonify({'error': 'No file selected'}), 400
         
         if not allowed_file(file.filename):
-            return jsonify({'error': 'Invalid file type. Only .xlsx and .xls files are allowed'}), 400
+            return jsonify({'error': 'Invalid file type. Only .xlsx, .xls, and .csv files are allowed'}), 400
         
         # Get upload parameters
         file_type = request.form.get('file_type', '')
@@ -45,9 +63,20 @@ def upload_file():
         
         # Process the file
         try:
-            logger.info(f"Reading Excel file: {file.filename}")
-            df = pd.read_excel(file)
-            logger.info(f"Successfully read Excel file with {len(df)} rows and {len(df.columns)} columns")
+            logger.info(f"Reading file: {file.filename}")
+            
+            # Read file based on extension
+            file_extension = file.filename.rsplit('.', 1)[1].lower()
+            if file_extension == 'csv':
+                # Special handling for BSE scheme CSV files
+                if file_type == 'bse_scheme':
+                    df = read_bse_csv(file)
+                else:
+                    df = pd.read_csv(file)
+            else:
+                df = pd.read_excel(file)
+                
+            logger.info(f"Successfully read file with {len(df)} rows and {len(df.columns)} columns")
             
             # Import data to database based on file type
             stats = {}
@@ -64,6 +93,8 @@ def upload_file():
                 stats = importer.import_returns_data(df, clear_existing)
             elif file_type == 'nav':
                 stats = importer.import_nav_data(df, clear_existing, batch_size)
+            elif file_type == 'bse_scheme':
+                stats = importer.import_bse_scheme_data(df, clear_existing, batch_size)
             else:
                 logger.error(f"Unsupported file type: {file_type}")
                 return jsonify({'error': f'Unsupported file type: {file_type}'}), 400
