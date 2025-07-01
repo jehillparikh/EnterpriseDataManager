@@ -63,7 +63,6 @@ class FundFactSheet(db.Model):
     sebi_risk_category = db.Column(db.String(50), nullable=True)  # From 'SEBI Risk Category'
     
     # Legacy fields (for backward compatibility)
-    aum = db.Column(db.Float, nullable=True)  # Assets Under Management in Crores
     launch_date = db.Column(db.Date, nullable=True)  # Launch date of the fund
     
     # Metadata

@@ -156,7 +156,6 @@ class FundDataImporter:
                         sebi_risk_category = str(row.get('SEBI Risk Category', '')).strip() if not pd.isna(row.get('SEBI Risk Category')) else None
                         
                         # Legacy fields for backward compatibility
-                        aum = float(row.get('AUM', row.get('AUM (₹ Cr)', 0))) if not pd.isna(row.get('AUM', row.get('AUM (₹ Cr)'))) else None
                         launch_date = self._parse_date(row.get('Launch Date'))
 
                         factsheet_record = {
