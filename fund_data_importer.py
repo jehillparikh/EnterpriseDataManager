@@ -217,12 +217,25 @@ class FundDataImporter:
                         FundFactSheet.__table__).values(factsheet_records)
                     stmt = stmt.on_conflict_do_update(
                         index_elements=['isin'],
-                        set_=dict(fund_manager=stmt.excluded.fund_manager,
-                                  aum=stmt.excluded.aum,
-                                  expense_ratio=stmt.excluded.expense_ratio,
-                                  launch_date=stmt.excluded.launch_date,
-                                  exit_load=stmt.excluded.exit_load,
-                                  last_updated=stmt.excluded.last_updated))
+                        set_=dict(
+                            # Standardized Excel columns
+                            scheme_name=stmt.excluded.scheme_name,
+                            scheme_type=stmt.excluded.scheme_type,
+                            sub_category=stmt.excluded.sub_category,
+                            plan=stmt.excluded.plan,
+                            amc=stmt.excluded.amc,
+                            expense_ratio=stmt.excluded.expense_ratio,
+                            minimum_lumpsum=stmt.excluded.minimum_lumpsum,
+                            minimum_sip=stmt.excluded.minimum_sip,
+                            lock_in=stmt.excluded.lock_in,
+                            exit_load=stmt.excluded.exit_load,
+                            fund_manager=stmt.excluded.fund_manager,
+                            benchmark=stmt.excluded.benchmark,
+                            sebi_risk_category=stmt.excluded.sebi_risk_category,
+                            # Legacy fields
+                            launch_date=stmt.excluded.launch_date,
+                            last_updated=stmt.excluded.last_updated
+                        ))
                     db.session.execute(stmt)
                     stats['factsheets_processed'] += len(factsheet_records)
 
