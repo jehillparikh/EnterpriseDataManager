@@ -466,7 +466,7 @@ class FundDataImporter:
                     from sqlalchemy.dialects.postgresql import insert
 
                     stmt = insert(FundHolding.__table__).values(holdings_records)
-                    # Use composite key (isin + instrument_isin) for conflict resolution
+                    # Use composite key (Scheme ISIN + Instrument ISIN) for conflict resolution
                     stmt = stmt.on_conflict_do_update(
                         index_elements=['isin', 'instrument_isin'],
                         set_=dict(
