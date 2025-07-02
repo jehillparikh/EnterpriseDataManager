@@ -197,6 +197,13 @@ The application uses a PostgreSQL database with the following key architectural 
   - Enhanced all API endpoints to return comprehensive factsheet data including financial details, investment terms, management info, and risk categories
   - Maintains legacy field support for existing data while adding new structured fields
   - Removed redundant AUM field from FundFactSheet model since core fund information is already captured in the Fund table
+- July 2, 2025: Enhanced portfolio holdings import with bulk upsert strategy
+  - Updated import_holdings_data to use PostgreSQL bulk upsert for CSV portfolio files
+  - Added support for standardized CSV columns: Name of Instrument, ISIN, Coupon, Industry, Quantity, Market Value, % to Net Assets, Yield, Type, AMC, Scheme Name, Scheme ISIN
+  - Implemented batch processing (1000 records per batch) for large portfolio files
+  - Uses composite key (isin + instrument_isin) for conflict resolution in bulk upserts
+  - Enhanced validation with pre-loaded fund ISIN set for efficient existence checking
+  - Maintains comprehensive error tracking and skip statistics for invalid data
 
 ## User Preferences
 

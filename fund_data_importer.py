@@ -373,18 +373,21 @@ class FundDataImporter:
             logger.error(f"Error importing returns data: {e}")
             raise
 
-    def import_holdings_data(self, df, clear_existing=False):
+    def import_holdings_data(self, df, clear_existing=False, batch_size=1000):
         """
-        Import fund holdings data from DataFrame
+        Import fund holdings data from DataFrame using bulk upsert strategy
         
         Args:
-            df: DataFrame containing holdings data
+            df: DataFrame containing holdings data with columns:
+                Name of Instrument, ISIN, Coupon, Industry, Quantity, 
+                Market Value, % to Net Assets, Yield, Type, AMC, Scheme Name, Scheme ISIN
             clear_existing (bool): Whether to clear existing data before import
+            batch_size (int): Number of records to process in each batch
             
         Returns:
             dict: Statistics about the import operation
         """
-        logger.info(f"Importing holdings data with {len(df)} records")
+        logger.info(f"Importing holdings data with {len(df)} records using bulk upsert strategy")
 
         try:
             if clear_existing and len(df) > 0:
@@ -395,80 +398,97 @@ class FundDataImporter:
 
             # Track statistics
             stats = {
-                'holdings_created': 0,
+                'holdings_processed': 0,
                 'rows_skipped_invalid_isin': 0,
                 'rows_skipped_no_fund': 0,
-                'total_rows_processed': len(df)
+                'total_rows_processed': len(df),
+                'batches_processed': 0
             }
 
-            # Process each row
-            for _, row in df.iterrows():
-                try:
-                    scheme_isin = str(row.get('Scheme ISIN', '')).strip()
+            # Get all valid fund ISINs for validation
+            valid_fund_isins = set(fund.isin for fund in Fund.query.with_entities(Fund.isin).all())
+            
+            # Process data in batches
+            total_batches = (len(df) + batch_size - 1) // batch_size
+            
+            for batch_num in range(total_batches):
+                start_idx = batch_num * batch_size
+                end_idx = min(start_idx + batch_size, len(df))
+                batch_df = df.iloc[start_idx:end_idx]
+                
+                logger.info(f"Processing batch {batch_num + 1}/{total_batches} (rows {start_idx + 1}-{end_idx})")
+                
+                holdings_records = []
+                
+                for idx, row in batch_df.iterrows():
+                    try:
+                        scheme_isin = str(row.get('Scheme ISIN', '')).strip()
 
-                    # Skip if Scheme ISIN is invalid, empty, NaN, or contains invalid characters
-                    if (not scheme_isin or scheme_isin.lower() == 'nan'
-                            or scheme_isin == '' or scheme_isin == '-'
-                            or scheme_isin == 'None'
-                            or pd.isna(row.get('Scheme ISIN'))
-                            or len(scheme_isin)
-                            < 8):  # ISIN should be at least 8 characters
-                        logger.warning(
-                            f"Skipping row with invalid Scheme ISIN: '{scheme_isin}'"
-                        )
-                        stats['rows_skipped_invalid_isin'] += 1
+                        # Skip if Scheme ISIN is invalid, empty, NaN, or contains invalid characters
+                        if (not scheme_isin or scheme_isin.lower() == 'nan'
+                                or scheme_isin == '' or scheme_isin == '-'
+                                or scheme_isin == 'None'
+                                or pd.isna(row.get('Scheme ISIN'))
+                                or len(scheme_isin) < 8):  # ISIN should be at least 8 characters
+                            logger.warning(f"Skipping row {idx+1} with invalid Scheme ISIN: '{scheme_isin}'")
+                            stats['rows_skipped_invalid_isin'] += 1
+                            continue
+
+                        # Check if the fund exists in database
+                        if scheme_isin not in valid_fund_isins:
+                            logger.warning(f"Skipping holding for non-existent fund ISIN: '{scheme_isin}'")
+                            stats['rows_skipped_no_fund'] += 1
+                            continue
+
+                        # Create holding record
+                        holding_record = {
+                            'isin': scheme_isin,
+                            'instrument_isin': str(row.get('ISIN', '')).strip() if not pd.isna(row.get('ISIN')) else None,
+                            'instrument_name': str(row.get('Name of Instrument', '')).strip(),
+                            'sector': str(row.get('Industry', '')).strip() if not pd.isna(row.get('Industry')) else None,
+                            'quantity': float(row.get('Quantity', 0)) if not pd.isna(row.get('Quantity')) else None,
+                            'value': float(row.get('Market Value', 0)) if not pd.isna(row.get('Market Value')) else None,
+                            'percentage_to_nav': float(row.get('% to Net Assets', 0)) if not pd.isna(row.get('% to Net Assets')) else 0,
+                            'yield_value': float(row.get('Yield', 0)) if not pd.isna(row.get('Yield')) else None,
+                            'instrument_type': str(row.get('Type', '')).strip(),
+                            'coupon': float(row.get('Coupon', 0)) if not pd.isna(row.get('Coupon')) else None,
+                            'amc_name': str(row.get('AMC', '')).strip() if not pd.isna(row.get('AMC')) else None,
+                            'scheme_name': str(row.get('Scheme Name', '')).strip() if not pd.isna(row.get('Scheme Name')) else None
+                        }
+                        holdings_records.append(holding_record)
+
+                    except Exception as e:
+                        logger.error(f"Error processing holding row {idx+1}: {e}")
                         continue
 
-                    # Check if the fund exists in database
-                    fund_exists = Fund.query.filter_by(
-                        isin=scheme_isin).first()
-                    if not fund_exists:
-                        logger.warning(
-                            f"Skipping holding for non-existent fund ISIN: '{scheme_isin}'"
-                        )
-                        stats['rows_skipped_no_fund'] += 1
-                        continue
+                # Bulk insert holdings using PostgreSQL upsert
+                if holdings_records:
+                    from sqlalchemy.dialects.postgresql import insert
 
-                    holding = FundHolding()
-                    holding.isin = scheme_isin
-                    holding.instrument_isin = str(row.get(
-                        'ISIN', '')) if not pd.isna(row.get('ISIN')) else None
-                    holding.instrument_name = str(
-                        row.get('Name of Instrument', ''))
-                    holding.sector = str(row.get(
-                        'Industry',
-                        '')) if not pd.isna(row.get('Industry')) else None
-                    holding.quantity = float(row.get(
-                        'Quantity',
-                        0)) if not pd.isna(row.get('Quantity')) else None
-                    holding.value = float(row.get(
-                        'Market Value',
-                        0)) if not pd.isna(row.get('Market Value')) else None
-                    holding.percentage_to_nav = float(
-                        row.get('% to Net Assets', 0)) if not pd.isna(
-                            row.get('% to Net Assets')) else 0
-                    holding.yield_value = float(row.get(
-                        'Yield', 0)) if not pd.isna(row.get('Yield')) else None
-                    holding.instrument_type = str(row.get('Type', ''))
-                    holding.coupon = float(
-                        row.get('Coupon',
-                                0)) if not pd.isna(row.get('Coupon')) else None
-                    holding.amc_name = str(row.get(
-                        'AMC', '')) if not pd.isna(row.get('AMC')) else None
-                    holding.scheme_name = str(row.get(
-                        'Scheme Name',
-                        '')) if not pd.isna(row.get('Scheme Name')) else None
-
-                    db.session.add(holding)
-                    stats['holdings_created'] += 1
-
-                except Exception as e:
-                    logger.error(f"Error processing holding row: {e}")
-                    continue
+                    stmt = insert(FundHolding.__table__).values(holdings_records)
+                    # Use composite key (isin + instrument_isin) for conflict resolution
+                    stmt = stmt.on_conflict_do_update(
+                        index_elements=['isin', 'instrument_isin'],
+                        set_=dict(
+                            instrument_name=stmt.excluded.instrument_name,
+                            sector=stmt.excluded.sector,
+                            quantity=stmt.excluded.quantity,
+                            value=stmt.excluded.value,
+                            percentage_to_nav=stmt.excluded.percentage_to_nav,
+                            yield_value=stmt.excluded.yield_value,
+                            instrument_type=stmt.excluded.instrument_type,
+                            coupon=stmt.excluded.coupon,
+                            amc_name=stmt.excluded.amc_name,
+                            scheme_name=stmt.excluded.scheme_name
+                        ))
+                    db.session.execute(stmt)
+                    stats['holdings_processed'] += len(holdings_records)
+                
+                stats['batches_processed'] += 1
 
             # Commit all changes
             db.session.commit()
-            logger.info(f"Holdings import completed: {stats}")
+            logger.info(f"Holdings bulk import completed: {stats}")
 
             return stats
 

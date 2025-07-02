@@ -112,7 +112,7 @@ def upload_file():
             if file_type == 'factsheet':
                 stats = importer.import_factsheet_data(df, clear_existing)
             elif file_type == 'holdings':
-                stats = importer.import_holdings_data(df, clear_existing)
+                stats = importer.import_holdings_data(df, clear_existing, batch_size)
             elif file_type == 'returns':
                 stats = importer.import_returns_data(df, clear_existing)
             elif file_type == 'nav':
