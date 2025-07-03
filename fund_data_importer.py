@@ -465,17 +465,28 @@ class FundDataImporter:
                     try:
                         scheme_isin = str(row.get('Scheme ISIN', '')).strip()
 
+                        instrument_isin = str(row.get('ISIN')).strip()
+
                         # Skip if Scheme ISIN is invalid, empty, NaN, or contains invalid characters
                         if (not scheme_isin or scheme_isin.lower() == 'nan'
                                 or scheme_isin == '' or scheme_isin == '-'
                                 or scheme_isin == 'None'
                                 or pd.isna(row.get('Scheme ISIN'))
-                                or len(scheme_isin)
-                                < 8):  # ISIN should be at least 8 characters
+                                or len(scheme_isin) < 8 or len(scheme_isin)
+                                > 12):  # ISIN should be at least 8 characters
                             logger.warning(
                                 f"Skipping row {idx+1} with invalid Scheme ISIN: '{scheme_isin}'"
                             )
                             stats['rows_skipped_invalid_isin'] += 1
+                            continue
+
+                        if len(instrument_isin) > 12 or len(
+                                instrument_isin
+                        ) < 8 or instrument_isin.lower(
+                        ) == 'nan' or instrument_isin == '' or instrument_isin == '-' or instrument_isin == 'None':
+                            logger.warning(
+                                f"Skipping holding for non-valid instrutment ISIN: '{scheme_isin}'"
+                            )
                             continue
 
                         # Check if the fund exists in database
@@ -491,8 +502,7 @@ class FundDataImporter:
                             'isin':
                             scheme_isin,
                             'instrument_isin':
-                            str(row.get('ISIN', '')).strip()
-                            if not pd.isna(row.get('ISIN')) else None,
+                            str(row.get('ISIN', '')).strip(),
                             'instrument_name':
                             str(row.get('Name of Instrument', '')).strip(),
                             'sector':
@@ -581,7 +591,7 @@ class FundDataImporter:
             for _, row in df.iterrows():
                 try:
                     isin = str(row.get('ISIN', '')).strip()
-                    if not isin or isin.lower() == 'nan' or len(isin) > 12:
+                    if not isin or isin.lower() == 'nan' or len(isin):
                         continue
 
                     # Parse date
