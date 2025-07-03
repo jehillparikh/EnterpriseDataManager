@@ -40,31 +40,41 @@ class FundFactSheet(db.Model):
     isin = db.Column(db.String(12),
                      db.ForeignKey('mf_fund.isin'),
                      primary_key=True)
-    
+
     # Core fund information
-    scheme_name = db.Column(db.String(255), nullable=True)  # From 'Scheme Name'
-    scheme_type = db.Column(db.String(100), nullable=True)  # From 'Scheme Type'
-    sub_category = db.Column(db.String(100), nullable=True)  # From 'Sub Category'
-    plan = db.Column(db.String(50), nullable=True)  # From 'Plan' (Growth/Dividend)
-    amc = db.Column(db.String(100), nullable=True)  # From 'AMC' (Asset Management Company)
-    
+    scheme_name = db.Column(db.String(255),
+                            nullable=True)  # From 'Scheme Name'
+    scheme_type = db.Column(db.String(100),
+                            nullable=True)  # From 'Scheme Type'
+    sub_category = db.Column(db.String(100),
+                             nullable=True)  # From 'Sub Category'
+    plan = db.Column(db.String(50),
+                     nullable=True)  # From 'Plan' (Growth/Dividend)
+    amc = db.Column(db.String(100),
+                    nullable=True)  # From 'AMC' (Asset Management Company)
+
     # Financial details
-    expense_ratio = db.Column(db.Float, nullable=True)  # From 'Expense Ratio' percentage
-    minimum_lumpsum = db.Column(db.Float, nullable=True)  # From 'Minimum Lumpsum'
+    expense_ratio = db.Column(db.Float,
+                              nullable=True)  # From 'Expense Ratio' percentage
+    minimum_lumpsum = db.Column(db.Float,
+                                nullable=True)  # From 'Minimum Lumpsum'
     minimum_sip = db.Column(db.Float, nullable=True)  # From 'Minimum SIP'
-    
+
     # Investment terms
     lock_in = db.Column(db.String(100), nullable=True)  # From 'Lock-in' period
-    exit_load = db.Column(db.String(255), nullable=True)  # From 'Exit Load' details
-    
+    exit_load = db.Column(db.String(255),
+                          nullable=True)  # From 'Exit Load' details
+
     # Management and risk
-    fund_manager = db.Column(db.String(255), nullable=True)  # From 'Fund Manager'
+    fund_manager = db.Column(db.String(255),
+                             nullable=True)  # From 'Fund Manager'
     benchmark = db.Column(db.String(255), nullable=True)  # From 'Benchmark'
-    sebi_risk_category = db.Column(db.String(50), nullable=True)  # From 'SEBI Risk Category'
-    
+    sebi_risk_category = db.Column(db.String(50),
+                                   nullable=True)  # From 'SEBI Risk Category'
+
     # Legacy fields (for backward compatibility)
     launch_date = db.Column(db.Date, nullable=True)  # Launch date of the fund
-    
+
     # Metadata
     last_updated = db.Column(db.DateTime,
                              default=datetime.utcnow,
@@ -72,7 +82,7 @@ class FundFactSheet(db.Model):
 
     # Relationship to Fund
     fund = db.relationship("Fund", backref="factsheet")
-    
+
     # Index for common searches
     __table_args__ = (
         Index('idx_factsheet_scheme_type', 'scheme_type'),
@@ -135,15 +145,15 @@ class FundHolding(db.Model):
                        nullable=True)  # Coupon percentage for debt instruments
     instrument_name = db.Column(db.String(255),
                                 nullable=False)  # Name of Instrument
-    sector = db.Column(db.String(100),
+    sector = db.Column(db.String(255),
                        nullable=True)  # Industry classification
     quantity = db.Column(db.Float, nullable=True)  # Quantity held
     value = db.Column(db.Float, nullable=True)  # Market Value in INR
     percentage_to_nav = db.Column(db.Float, nullable=False)  # % to Net Assets
     yield_value = db.Column(db.Float, nullable=True)  # Yield percentage
-    instrument_type = db.Column(db.String(50),
+    instrument_type = db.Column(db.String(100),
                                 nullable=False)  # Type of instrument
-    amc_name = db.Column(db.String(100), nullable=True)  # AMC name from upload
+    amc_name = db.Column(db.String(255), nullable=True)  # AMC name from upload
     scheme_name = db.Column(db.String(255),
                             nullable=True)  # Scheme Name from upload
     last_updated = db.Column(db.DateTime,
