@@ -529,7 +529,7 @@ class FundDataImporter:
                     holdings_objects = [
                         FundHolding(**record) for record in holdings_records
                     ]
-                    
+
                     # Use bulk insert without conflict resolution
                     db.session.bulk_save_objects(holdings_objects)
                     stats['holdings_processed'] += len(holdings_records)
@@ -581,7 +581,7 @@ class FundDataImporter:
             for _, row in df.iterrows():
                 try:
                     isin = str(row.get('ISIN', '')).strip()
-                    if not isin or isin.lower() == 'nan':
+                    if not isin or isin.lower() == 'nan' or len(isin) > 12:
                         continue
 
                     # Parse date
