@@ -122,9 +122,7 @@ class FundDataImporter:
                         if not isin or isin.lower() in ['nan', 'none', '-']:
                             continue
 
-                        logger.warning(
-                            f"row {idx+1} due to missing/invalid ISIN: '{isin}'"
-                        )
+                        logger.warning(f"row {idx+1} with ISIN: '{isin}'")
 
                         # Extract fund data - using new column structure
                         scheme_name = str(row.get('Scheme Name', '')).strip()
