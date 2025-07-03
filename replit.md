@@ -204,6 +204,11 @@ The application uses a PostgreSQL database with the following key architectural 
   - Uses composite key (isin + instrument_isin) for conflict resolution in bulk upserts
   - Enhanced validation with pre-loaded fund ISIN set for efficient existence checking
   - Maintains comprehensive error tracking and skip statistics for invalid data
+- July 3, 2025: Updated FundHolding database schema field lengths
+  - Extended amc_name field length from 100 to 255 characters
+  - Extended instrument_type field length from 50 to 255 characters  
+  - Extended sector field length from 100 to 255 characters
+  - Database schema now synchronized with updated FundHolding model definitions
 
 ## User Preferences
 
