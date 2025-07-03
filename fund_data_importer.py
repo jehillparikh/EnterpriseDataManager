@@ -485,7 +485,7 @@ class FundDataImporter:
                         ) < 8 or instrument_isin.lower(
                         ) == 'nan' or instrument_isin == '' or instrument_isin == '-' or instrument_isin == 'None':
                             logger.warning(
-                                f"Skipping holding for non-valid instrutment ISIN: '{scheme_isin}'"
+                                f"Skipping holding for non-valid instrutment ISIN: '{instrument_isin}'"
                             )
                             continue
 
@@ -533,6 +533,9 @@ class FundDataImporter:
                             f"Error processing holding row {idx+1}: {e}")
                         continue
 
+                logger.info(f"commiting stats of the batch records")
+
+
                 # Bulk insert holdings using simple INSERT
                 if holdings_records:
                     # Create FundHolding objects for bulk insert
@@ -546,6 +549,7 @@ class FundDataImporter:
 
                 stats['batches_processed'] += 1
 
+            logger.info(f"DOING FINAL COMMIT TO THE DATABASE")
             # Commit all changes
             db.session.commit()
             logger.info(f"Holdings bulk import completed: {stats}")
