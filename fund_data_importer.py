@@ -537,7 +537,7 @@ class FundDataImporter:
                         FundHolding.__table__).values(holdings_records)
                     # Use composite key (Scheme ISIN + Instrument ISIN) for conflict resolution
                     stmt = stmt.on_conflict_do_update(
-                        index_elements=['isin', 'instrument_isin'],
+                        index_elements=['isin'],
                         set_=dict(
                             instrument_name=stmt.excluded.instrument_name,
                             sector=stmt.excluded.sector,
