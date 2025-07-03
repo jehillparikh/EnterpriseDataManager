@@ -214,6 +214,8 @@ The application uses a PostgreSQL database with the following key architectural 
   - Updated import_holdings_data to use simple bulk insert without conflict resolution
   - Multiple instruments per scheme with same ISIN now allowed as intended
   - Portfolio holdings import now uses bulk_save_objects for clean INSERT operations
+  - Removed AMC and Scheme Name fields from holdings import process
+  - Portfolio upload now uses only essential fields, relying on Scheme ISIN for fund linkage
 
 ## User Preferences
 

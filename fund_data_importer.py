@@ -415,7 +415,7 @@ class FundDataImporter:
         Args:
             df: DataFrame containing holdings data with columns:
                 Name of Instrument, ISIN, Coupon, Industry, Quantity, 
-                Market Value, % to Net Assets, Yield, Type, AMC, Scheme Name, Scheme ISIN
+                Market Value, % to Net Assets, Yield, Type, Scheme ISIN
             clear_existing (bool): Whether to clear existing data before import
             batch_size (int): Number of records to process in each batch
             
