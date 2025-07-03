@@ -224,6 +224,8 @@ The application uses a PostgreSQL database with the following key architectural 
   - Improved BSE scheme import with comprehensive bulk upsert on unique_no
   - All imports now process data in configurable batches for better performance
   - Reduced database round trips and improved import speeds significantly
+  - Added unique constraint idx_nav_history_isin_date_unique on NavHistory table for proper upsert support
+  - Database schema now supports conflict resolution for all import operations
 
 ## User Preferences
 

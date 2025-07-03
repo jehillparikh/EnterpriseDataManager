@@ -187,7 +187,10 @@ class NavHistory(db.Model):
     # Relationship to Fund
     fund = db.relationship("Fund", backref="nav_history")
 
-    __table_args__ = (CheckConstraint('nav >= 0', name='check_nav'), )
+    __table_args__ = (
+        CheckConstraint('nav >= 0', name='check_nav'),
+        Index('idx_nav_history_isin_date', 'isin', 'date', unique=True),
+    )
 
 
 class FundRating(db.Model):

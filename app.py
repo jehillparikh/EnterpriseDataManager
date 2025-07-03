@@ -18,7 +18,8 @@ def init_app():
     # Create database tables
     with app.app_context():
         # Import models after app context is established
-        from models import Fund, FundFactSheet, FundReturns, FundHolding, NavHistory
+        from models import (Fund, FundFactSheet, FundReturns, FundHolding, 
+                           NavHistory, BSEScheme, FundRating, FundAnalytics)
         
         try:
             # Create all tables
