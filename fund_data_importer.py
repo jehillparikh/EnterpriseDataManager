@@ -514,13 +514,7 @@ class FundDataImporter:
                             str(row.get('Type', '')).strip(),
                             'coupon':
                             float(row.get('Coupon', 0))
-                            if not pd.isna(row.get('Coupon')) else None,
-                            'amc_name':
-                            str(row.get('AMC', '')).strip()
-                            if not pd.isna(row.get('AMC')) else None,
-                            'scheme_name':
-                            str(row.get('Scheme Name', '')).strip()
-                            if not pd.isna(row.get('Scheme Name')) else None
+                            if not pd.isna(row.get('Coupon')) else None
                         }
                         holdings_records.append(holding_record)
 
