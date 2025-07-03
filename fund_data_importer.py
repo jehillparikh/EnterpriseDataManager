@@ -118,6 +118,14 @@ class FundDataImporter:
                         if not isin or isin.lower() == 'nan':
                             continue
 
+                        isin = str(row.get('ISIN', '')).strip()
+                        if not isin or isin.lower() in ['nan', 'none', '-']:
+                            continue
+
+                        logger.warning(
+                            f"row {idx+1} due to missing/invalid ISIN: '{isin}'"
+                        )
+
                         # Extract fund data - using new column structure
                         scheme_name = str(row.get('Scheme Name', '')).strip()
                         scheme_type = str(row.get(
@@ -125,7 +133,7 @@ class FundDataImporter:
                                 row.get('Scheme Type')) else None
                         sub_category = str(row.get(
                             'Scheme Sub Category', '')).strip() if not pd.isna(
-                                row.get(' Scheme Sub Category')) else None
+                                row.get('Scheme Sub Category')) else None
 
                         #fund_type = str(row.get('Scheme Type', row.get('Fund Type', row.get('Type', '')))).strip()
                         #fund_subtype = str(row.get('sub_category', row.get('Fund Sub Type', row.get('Subtype', '')))).strip() if not pd.isna(row.get('Sub Category', row.get('Fund Sub Type', row.get('Subtype')))) else None
