@@ -216,6 +216,8 @@ The application uses a PostgreSQL database with the following key architectural 
   - Portfolio holdings import now uses bulk_save_objects for clean INSERT operations
   - Removed AMC and Scheme Name fields from holdings import process
   - Portfolio upload now uses only essential fields, relying on Scheme ISIN for fund linkage
+  - Removed percentage_to_nav constraints to allow negative values for short positions
+  - Portfolio holdings now support negative quantities, values, and percentages
 
 ## User Preferences
 

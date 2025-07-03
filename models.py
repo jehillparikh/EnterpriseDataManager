@@ -163,12 +163,7 @@ class FundHolding(db.Model):
     # Relationship to Fund
     fund = db.relationship("Fund", backref="fund_holdings")
 
-    __table_args__ = (
-        CheckConstraint('percentage_to_nav >= 0',
-                        name='check_percentage_to_nav'),
-        CheckConstraint('percentage_to_nav <= 100',
-                        name='check_percentage_to_nav_upper'),
-    )
+    # No constraints on percentage_to_nav to allow negative values for short positions
 
 
 class NavHistory(db.Model):
