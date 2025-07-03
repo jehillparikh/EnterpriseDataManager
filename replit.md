@@ -219,8 +219,8 @@ The application uses a PostgreSQL database with the following key architectural 
   - Removed percentage_to_nav constraints to allow negative values for short positions
   - Portfolio holdings now support negative quantities, values, and percentages
 - July 3, 2025: Enhanced all data imports with bulk upsert strategies
-  - Updated NAV import to use bulk_save_objects with batch processing
-  - Enhanced returns import with PostgreSQL bulk upsert and conflict resolution
+  - Updated NAV import to use PostgreSQL bulk upsert with conflict resolution on (isin, date)
+  - Enhanced returns import with PostgreSQL bulk upsert and conflict resolution on isin
   - Improved BSE scheme import with comprehensive bulk upsert on unique_no
   - All imports now process data in configurable batches for better performance
   - Reduced database round trips and improved import speeds significantly

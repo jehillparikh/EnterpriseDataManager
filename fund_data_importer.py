@@ -545,7 +545,7 @@ class FundDataImporter:
 
     def import_nav_data(self, df, clear_existing=False, batch_size=1000):
         """
-        Import NAV data from DataFrame using bulk insert strategy
+        Import NAV data from DataFrame using bulk upsert strategy
         
         Args:
             df: DataFrame containing NAV data
@@ -617,10 +617,16 @@ class FundDataImporter:
                         logger.error(f"Error processing NAV row: {e}")
                         continue
                 
-                # Bulk insert NAV records
+                # Bulk upsert NAV records using PostgreSQL
                 if nav_records:
-                    nav_objects = [NavHistory(**record) for record in nav_records]
-                    db.session.bulk_save_objects(nav_objects)
+                    from sqlalchemy.dialects.postgresql import insert
+                    
+                    stmt = insert(NavHistory.__table__).values(nav_records)
+                    stmt = stmt.on_conflict_do_update(
+                        index_elements=['isin', 'date'],
+                        set_=dict(nav=stmt.excluded.nav)
+                    )
+                    db.session.execute(stmt)
                     stats['nav_records_created'] += len(nav_records)
                     
                 # Commit batch
