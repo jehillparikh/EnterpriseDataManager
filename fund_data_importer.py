@@ -120,41 +120,69 @@ class FundDataImporter:
 
                         # Extract fund data - using new column structure
                         scheme_name = str(row.get('Scheme Name', '')).strip()
-                        fund_type = str(row.get('Scheme Type', row.get('Fund Type', row.get('Type', '')))).strip()
-                        fund_subtype = str(row.get('Sub Category', row.get('Fund Sub Type', row.get('Subtype', '')))).strip() if not pd.isna(row.get('Sub Category', row.get('Fund Sub Type', row.get('Subtype')))) else None
-                        amc_name = str(row.get('AMC', row.get('AMC Name', ''))).strip()
+                        scheme_type = str(row.get(
+                            'Scheme Type', '')).strip() if not pd.isna(
+                                row.get('Scheme Type')) else None
+                        sub_category = str(row.get(
+                            'Scheme Sub Category', '')).strip() if not pd.isna(
+                                row.get(' Scheme Sub Category')) else None
+
+                        #fund_type = str(row.get('Scheme Type', row.get('Fund Type', row.get('Type', '')))).strip()
+                        #fund_subtype = str(row.get('sub_category', row.get('Fund Sub Type', row.get('Subtype', '')))).strip() if not pd.isna(row.get('Sub Category', row.get('Fund Sub Type', row.get('Subtype')))) else None
+                        amc_name = str(row.get('AMC', row.get('AMC Name',
+                                                              ''))).strip()
 
                         fund_record = {
                             'isin': isin,
                             'scheme_name': scheme_name,
-                            'fund_type': fund_type,
-                            'fund_subtype': fund_subtype,
+                            'fund_type': scheme_type,
+                            'fund_subtype': sub_category,
                             'amc_name': amc_name
                         }
                         fund_records.append(fund_record)
 
                         # Extract enhanced factsheet data - supporting new column structure
                         # Core fund information
-                        factsheet_scheme_name = str(row.get('Scheme Name', '')).strip() if not pd.isna(row.get('Scheme Name')) else None
-                        scheme_type = str(row.get('Scheme Type', '')).strip() if not pd.isna(row.get('Scheme Type')) else None
-                        sub_category = str(row.get('Sub Category', '')).strip() if not pd.isna(row.get('Sub Category')) else None
-                        plan = str(row.get('Plan', '')).strip() if not pd.isna(row.get('Plan')) else None
-                        amc = str(row.get('AMC', '')).strip() if not pd.isna(row.get('AMC')) else None
-                        
+                        factsheet_scheme_name = str(row.get(
+                            'Scheme Name', '')).strip() if not pd.isna(
+                                row.get('Scheme Name')) else None
+                        plan = str(row.get('Plan', '')).strip() if not pd.isna(
+                            row.get('Plan')) else None
+                        amc = str(row.get('AMC', '')).strip() if not pd.isna(
+                            row.get('AMC')) else None
+
                         # Financial details
-                        expense_ratio = float(row.get('Expense Ratio', 0)) if not pd.isna(row.get('Expense Ratio')) else None
-                        minimum_lumpsum = float(row.get('Minimum Lumpsum', 0)) if not pd.isna(row.get('Minimum Lumpsum')) else None
-                        minimum_sip = float(row.get('Minimum SIP', 0)) if not pd.isna(row.get('Minimum SIP')) else None
-                        
+                        expense_ratio = float(row.get(
+                            'Expense Ratio', 0)) if not pd.isna(
+                                row.get('Expense Ratio')) else None
+                        minimum_lumpsum = float(row.get(
+                            'Minimum Lumpsum', 0)) if not pd.isna(
+                                row.get('Minimum Lumpsum')) else None
+                        minimum_sip = float(row.get(
+                            'Minimum SIP', 0)) if not pd.isna(
+                                row.get('Minimum SIP')) else None
+
                         # Investment terms
-                        lock_in = str(row.get('Lock-in', '')).strip() if not pd.isna(row.get('Lock-in')) else None
-                        exit_load = str(row.get('Exit Load', '')).strip() if not pd.isna(row.get('Exit Load')) else None
-                        
+                        lock_in = str(row.get('Lock-in',
+                                              '')).strip() if not pd.isna(
+                                                  row.get('Lock-in')) else None
+                        exit_load = str(row.get(
+                            'Exit Load', '')).strip() if not pd.isna(
+                                row.get('Exit Load')) else None
+
                         # Management and risk
-                        fund_manager = str(row.get('Fund Manager', '')).strip() if not pd.isna(row.get('Fund Manager')) else None
-                        benchmark = str(row.get('Benchmark', '')).strip() if not pd.isna(row.get('Benchmark')) else None
-                        sebi_risk_category = str(row.get('SEBI Risk Category', '')).strip() if not pd.isna(row.get('SEBI Risk Category')) else None
-                        
+                        fund_manager = str(row.get(
+                            'Fund Manager', '')).strip() if not pd.isna(
+                                row.get('Fund Manager')) else None
+                        benchmark = str(row.get(
+                            'Benchmark', '')).strip() if not pd.isna(
+                                row.get('Benchmark')) else None
+                        sebi_risk_category = str(
+                            row.get(
+                                'SEBI Risk Category',
+                                '')).strip() if not pd.isna(
+                                    row.get('SEBI Risk Category')) else None
+
                         # Legacy fields for backward compatibility
                         launch_date = self._parse_date(row.get('Launch Date'))
 
@@ -231,11 +259,11 @@ class FundDataImporter:
                             exit_load=stmt.excluded.exit_load,
                             fund_manager=stmt.excluded.fund_manager,
                             benchmark=stmt.excluded.benchmark,
-                            sebi_risk_category=stmt.excluded.sebi_risk_category,
+                            sebi_risk_category=stmt.excluded.
+                            sebi_risk_category,
                             # Legacy fields
                             launch_date=stmt.excluded.launch_date,
-                            last_updated=stmt.excluded.last_updated
-                        ))
+                            last_updated=stmt.excluded.last_updated))
                     db.session.execute(stmt)
                     stats['factsheets_processed'] += len(factsheet_records)
 
@@ -387,7 +415,9 @@ class FundDataImporter:
         Returns:
             dict: Statistics about the import operation
         """
-        logger.info(f"Importing holdings data with {len(df)} records using bulk upsert strategy")
+        logger.info(
+            f"Importing holdings data with {len(df)} records using bulk upsert strategy"
+        )
 
         try:
             if clear_existing and len(df) > 0:
@@ -406,20 +436,24 @@ class FundDataImporter:
             }
 
             # Get all valid fund ISINs for validation
-            valid_fund_isins = set(fund.isin for fund in Fund.query.with_entities(Fund.isin).all())
-            
+            valid_fund_isins = set(
+                fund.isin
+                for fund in Fund.query.with_entities(Fund.isin).all())
+
             # Process data in batches
             total_batches = (len(df) + batch_size - 1) // batch_size
-            
+
             for batch_num in range(total_batches):
                 start_idx = batch_num * batch_size
                 end_idx = min(start_idx + batch_size, len(df))
                 batch_df = df.iloc[start_idx:end_idx]
-                
-                logger.info(f"Processing batch {batch_num + 1}/{total_batches} (rows {start_idx + 1}-{end_idx})")
-                
+
+                logger.info(
+                    f"Processing batch {batch_num + 1}/{total_batches} (rows {start_idx + 1}-{end_idx})"
+                )
+
                 holdings_records = []
-                
+
                 for idx, row in batch_df.iterrows():
                     try:
                         scheme_isin = str(row.get('Scheme ISIN', '')).strip()
@@ -429,43 +463,71 @@ class FundDataImporter:
                                 or scheme_isin == '' or scheme_isin == '-'
                                 or scheme_isin == 'None'
                                 or pd.isna(row.get('Scheme ISIN'))
-                                or len(scheme_isin) < 8):  # ISIN should be at least 8 characters
-                            logger.warning(f"Skipping row {idx+1} with invalid Scheme ISIN: '{scheme_isin}'")
+                                or len(scheme_isin)
+                                < 8):  # ISIN should be at least 8 characters
+                            logger.warning(
+                                f"Skipping row {idx+1} with invalid Scheme ISIN: '{scheme_isin}'"
+                            )
                             stats['rows_skipped_invalid_isin'] += 1
                             continue
 
                         # Check if the fund exists in database
                         if scheme_isin not in valid_fund_isins:
-                            logger.warning(f"Skipping holding for non-existent fund ISIN: '{scheme_isin}'")
+                            logger.warning(
+                                f"Skipping holding for non-existent fund ISIN: '{scheme_isin}'"
+                            )
                             stats['rows_skipped_no_fund'] += 1
                             continue
 
                         # Create holding record
                         holding_record = {
-                            'isin': scheme_isin,
-                            'instrument_isin': str(row.get('ISIN', '')).strip() if not pd.isna(row.get('ISIN')) else None,
-                            'instrument_name': str(row.get('Name of Instrument', '')).strip(),
-                            'sector': str(row.get('Industry', '')).strip() if not pd.isna(row.get('Industry')) else None,
-                            'quantity': float(row.get('Quantity', 0)) if not pd.isna(row.get('Quantity')) else None,
-                            'value': float(row.get('Market Value', 0)) if not pd.isna(row.get('Market Value')) else None,
-                            'percentage_to_nav': float(row.get('% to Net Assets', 0)) if not pd.isna(row.get('% to Net Assets')) else 0,
-                            'yield_value': float(row.get('Yield', 0)) if not pd.isna(row.get('Yield')) else None,
-                            'instrument_type': str(row.get('Type', '')).strip(),
-                            'coupon': float(row.get('Coupon', 0)) if not pd.isna(row.get('Coupon')) else None,
-                            'amc_name': str(row.get('AMC', '')).strip() if not pd.isna(row.get('AMC')) else None,
-                            'scheme_name': str(row.get('Scheme Name', '')).strip() if not pd.isna(row.get('Scheme Name')) else None
+                            'isin':
+                            scheme_isin,
+                            'instrument_isin':
+                            str(row.get('ISIN', '')).strip()
+                            if not pd.isna(row.get('ISIN')) else None,
+                            'instrument_name':
+                            str(row.get('Name of Instrument', '')).strip(),
+                            'sector':
+                            str(row.get('Industry', '')).strip()
+                            if not pd.isna(row.get('Industry')) else None,
+                            'quantity':
+                            float(row.get('Quantity', 0))
+                            if not pd.isna(row.get('Quantity')) else None,
+                            'value':
+                            float(row.get('Market Value', 0))
+                            if not pd.isna(row.get('Market Value')) else None,
+                            'percentage_to_nav':
+                            float(row.get('% to Net Assets', 0))
+                            if not pd.isna(row.get('% to Net Assets')) else 0,
+                            'yield_value':
+                            float(row.get('Yield', 0))
+                            if not pd.isna(row.get('Yield')) else None,
+                            'instrument_type':
+                            str(row.get('Type', '')).strip(),
+                            'coupon':
+                            float(row.get('Coupon', 0))
+                            if not pd.isna(row.get('Coupon')) else None,
+                            'amc_name':
+                            str(row.get('AMC', '')).strip()
+                            if not pd.isna(row.get('AMC')) else None,
+                            'scheme_name':
+                            str(row.get('Scheme Name', '')).strip()
+                            if not pd.isna(row.get('Scheme Name')) else None
                         }
                         holdings_records.append(holding_record)
 
                     except Exception as e:
-                        logger.error(f"Error processing holding row {idx+1}: {e}")
+                        logger.error(
+                            f"Error processing holding row {idx+1}: {e}")
                         continue
 
                 # Bulk insert holdings using PostgreSQL upsert
                 if holdings_records:
                     from sqlalchemy.dialects.postgresql import insert
 
-                    stmt = insert(FundHolding.__table__).values(holdings_records)
+                    stmt = insert(
+                        FundHolding.__table__).values(holdings_records)
                     # Use composite key (Scheme ISIN + Instrument ISIN) for conflict resolution
                     stmt = stmt.on_conflict_do_update(
                         index_elements=['isin', 'instrument_isin'],
@@ -479,11 +541,10 @@ class FundDataImporter:
                             instrument_type=stmt.excluded.instrument_type,
                             coupon=stmt.excluded.coupon,
                             amc_name=stmt.excluded.amc_name,
-                            scheme_name=stmt.excluded.scheme_name
-                        ))
+                            scheme_name=stmt.excluded.scheme_name))
                     db.session.execute(stmt)
                     stats['holdings_processed'] += len(holdings_records)
-                
+
                 stats['batches_processed'] += 1
 
             # Commit all changes
