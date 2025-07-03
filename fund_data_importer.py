@@ -410,7 +410,7 @@ class FundDataImporter:
 
     def import_holdings_data(self, df, clear_existing=False, batch_size=1000):
         """
-        Import fund holdings data from DataFrame using bulk upsert strategy
+        Import fund holdings data from DataFrame using bulk insert strategy
         
         Args:
             df: DataFrame containing holdings data with columns:
@@ -529,27 +529,15 @@ class FundDataImporter:
                             f"Error processing holding row {idx+1}: {e}")
                         continue
 
-                # Bulk insert holdings using PostgreSQL upsert
+                # Bulk insert holdings using simple INSERT
                 if holdings_records:
-                    from sqlalchemy.dialects.postgresql import insert
-
-                    stmt = insert(
-                        FundHolding.__table__).values(holdings_records)
-                    # Use composite key (Scheme ISIN + Instrument ISIN) for conflict resolution
-                    stmt = stmt.on_conflict_do_update(
-                        index_elements=['isin'],
-                        set_=dict(
-                            instrument_name=stmt.excluded.instrument_name,
-                            sector=stmt.excluded.sector,
-                            quantity=stmt.excluded.quantity,
-                            value=stmt.excluded.value,
-                            percentage_to_nav=stmt.excluded.percentage_to_nav,
-                            yield_value=stmt.excluded.yield_value,
-                            instrument_type=stmt.excluded.instrument_type,
-                            coupon=stmt.excluded.coupon,
-                            amc_name=stmt.excluded.amc_name,
-                            scheme_name=stmt.excluded.scheme_name))
-                    db.session.execute(stmt)
+                    # Create FundHolding objects for bulk insert
+                    holdings_objects = [
+                        FundHolding(**record) for record in holdings_records
+                    ]
+                    
+                    # Use bulk insert without conflict resolution
+                    db.session.bulk_save_objects(holdings_objects)
                     stats['holdings_processed'] += len(holdings_records)
 
                 stats['batches_processed'] += 1

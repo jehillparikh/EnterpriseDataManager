@@ -209,6 +209,11 @@ The application uses a PostgreSQL database with the following key architectural 
   - Extended instrument_type field length from 50 to 255 characters  
   - Extended sector field length from 100 to 255 characters
   - Database schema now synchronized with updated FundHolding model definitions
+- July 3, 2025: Removed unique constraint and ON CONFLICT logic from holdings import
+  - Dropped uq_mf_fund_holdings_scheme_instrument unique constraint from database
+  - Updated import_holdings_data to use simple bulk insert without conflict resolution
+  - Multiple instruments per scheme with same ISIN now allowed as intended
+  - Portfolio holdings import now uses bulk_save_objects for clean INSERT operations
 
 ## User Preferences
 
