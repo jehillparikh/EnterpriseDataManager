@@ -1,0 +1,74 @@
+# Git and version control
+.git
+.gitignore
+
+# Python cache and virtual environments
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache/
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Replit specific files
+.replit
+replit.nix
+.upm/
+
+# Temporary and log files
+*.tmp
+*.temp
+*.log
+
+# Documentation and non-essential files
+README.md
+docs/
+*.md
+!deploy-requirements.txt
+
+# Local development files
+.env
+.env.local
+instance/
+temp/
+
+# Jupyter notebooks
+*.ipynb
+
+# Test files
+tests/
+test_*.py
+*_test.py
